@@ -1,0 +1,145 @@
+// gerado por tools/evid2web.py a partir de docs/evidencias/sil_resumo.json e dos testes compilados
+window.SIL_RESUMO = {
+ "segundos": 30,
+ "hash": "cf078ceb7e9a8f90",
+ "utilizacao": 0.0519,
+ "tarefas": [
+  {
+   "nome": "ISR2_CAN",
+   "prio": 20,
+   "periodo_ms": 0,
+   "custo_us": 25,
+   "ativacoes": 53,
+   "r_max_us": 25,
+   "r_rta_us": 25,
+   "prazo_us": 1000,
+   "perdas": 0
+  },
+  {
+   "nome": "Task_CAN_RX",
+   "prio": 10,
+   "periodo_ms": 0,
+   "custo_us": 90,
+   "ativacoes": 54,
+   "r_max_us": 115,
+   "r_rta_us": 275,
+   "prazo_us": 2000,
+   "perdas": 0
+  },
+  {
+   "nome": "Task_Acquisition",
+   "prio": 8,
+   "periodo_ms": 10,
+   "custo_us": 180,
+   "ativacoes": 2999,
+   "r_max_us": 295,
+   "r_rta_us": 455,
+   "prazo_us": 10000,
+   "perdas": 0
+  },
+  {
+   "nome": "Task_Processing",
+   "prio": 6,
+   "periodo_ms": 20,
+   "custo_us": 140,
+   "ativacoes": 1499,
+   "r_max_us": 435,
+   "r_rta_us": 595,
+   "prazo_us": 20000,
+   "perdas": 0
+  },
+  {
+   "nome": "Task_Display",
+   "prio": 4,
+   "periodo_ms": 50,
+   "custo_us": 1200,
+   "ativacoes": 599,
+   "r_max_us": 1635,
+   "r_rta_us": 1795,
+   "prazo_us": 50000,
+   "perdas": 0
+  },
+  {
+   "nome": "Task_Diagnostics",
+   "prio": 3,
+   "periodo_ms": 100,
+   "custo_us": 220,
+   "ativacoes": 299,
+   "r_max_us": 1855,
+   "r_rta_us": 1915,
+   "prazo_us": 100000,
+   "perdas": 0
+  },
+  {
+   "nome": "Task_Logging",
+   "prio": 1,
+   "periodo_ms": 1000,
+   "custo_us": 450,
+   "ativacoes": 29,
+   "r_max_us": 2305,
+   "r_rta_us": 2305,
+   "prazo_us": 1000000,
+   "perdas": 0
+  }
+ ],
+ "verificacoes": [
+  {
+   "nome": "Functional Correctness",
+   "ok": true,
+   "detalhe": "9 de 9 reações de falha corretas; 53 frames M1 e 26 M2 decodificados"
+  },
+  {
+   "nome": "Task Periods",
+   "ok": true,
+   "detalhe": "10/20/50/100/1000 ms exatos em todas as ativações"
+  },
+  {
+   "nome": "Deadline Compliance",
+   "ok": true,
+   "detalhe": "0 prazos perdidos, 0 ativações perdidas (E_OS_LIMIT)"
+  },
+  {
+   "nome": "Data Freshness",
+   "ok": true,
+   "detalhe": "idade máx. no painel: M1 450 ms (período 500), M2 950 ms (período 1000)"
+  },
+  {
+   "nome": "CAN Timeout Handling",
+   "ok": true,
+   "detalhe": "U0100 após >1000 ms sem M1, U0101 após >2000 ms sem M2, valor seguro 0; latência ISR->decodificado 115 us (RTR-01 < 2 ms)"
+  },
+  {
+   "nome": "Resource Protection",
+   "ok": true,
+   "detalhe": "teto 10; 0 violações de teto, 0 erros de API, no máx. 1 tarefa dentro do ICM_Resource"
+  },
+  {
+   "nome": "Deterministic Dashboard Update",
+   "ok": true,
+   "detalhe": "599 quadros, intervalo 50..50 ms; hash do trace cf078ceb7e9a8f90"
+  },
+  {
+   "nome": "Schedulability (RTA)",
+   "ok": true,
+   "detalhe": "utilização 5.19 %; pior resposta analítica dentro do prazo em todas"
+  }
+ ],
+ "gtest": [
+  {
+   "suite": "GoogleTest - lógica (RS/RF/RC)",
+   "total": 36,
+   "falhas": 0
+  },
+  {
+   "suite": "GoogleTest - tempo real (RTR)",
+   "total": 13,
+   "falhas": 0
+  },
+  {
+   "suite": "Harness C (make test)",
+   "total": 19,
+   "falhas": 0
+  }
+ ],
+ "gerado_em": "2026-10-27"
+};

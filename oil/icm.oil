@@ -1,0 +1,191 @@
+/*
+ * icm.oil - configuração do Trampoline pro painel (ICM).
+ * O goil gera o código do sistema a partir daqui.
+ *
+ * Prioridades: quanto maior, mais urgente. A ISR do CAN fica acima de tudo
+ * e a Task_CAN_RX logo abaixo, pra frame recebido ser tratado na hora.
+ *
+ * Este é o OIL da placa (tick de 1 ms). Pra rodar no PC com o Trampoline
+ * posix use o oil/icm_posix.oil (mesmas tarefas, tick de 10 ms e a ISR
+ * ligada num sinal Unix). O SIL (sim/) é gerado deste arquivo pelo
+ * tools/oil2sil.py: depois de mudar algo aqui, rode
+ *   python3 tools/oil2sil.py
+ */
+OIL_VERSION = "2.5";
+
+IMPLEMENTATION trampoline {
+    TASK {
+        UINT32 STACKSIZE = 2048;
+        UINT32 PRIORITY = 1;
+    };
+    ISR {
+        UINT32 STACKSIZE = 2048;
+        UINT32 PRIORITY = 1;
+    };
+};
+
+CPU icm_module {
+    OS config {
+        STATUS = EXTENDED;
+        ERRORHOOK = FALSE;
+        PRETASKHOOK = FALSE;
+        POSTTASKHOOK = FALSE;
+        STARTUPHOOK = TRUE;
+        SHUTDOWNHOOK = FALSE;
+        USERESSCHEDULER = FALSE;
+    };
+
+    APPMODE std_app_mode {};
+
+    /* 1 tick = 1 ms, base de todos os alarmes */
+    COUNTER SystemCounter {
+        MINCYCLE = 1;
+        MAXALLOWEDVALUE = 65535;
+        TICKSPERBASE = 1;
+    };
+
+    /* protege o ICM_Data; o teto de prioridade é calculado pelo goil
+       a partir das tarefas que usam o recurso */
+    RESOURCE ICM_Resource {
+        RESOURCEPROPERTY = STANDARD;
+    };
+
+    /* a ISR sinaliza este evento quando chega frame */
+    EVENT Event_CAN_RX {
+        MASK = AUTO;
+    };
+
+    /* categoria 2 porque chama SetEvent */
+    ISR ISR2_CAN {
+        CATEGORY = 2;
+        PRIORITY = 20;
+        SOURCE = CAN0_RX_IRQ;
+    };
+
+    /* --- tarefas --- */
+
+    /* estendida: espera o Event_CAN_RX. Já começa rodando (AUTOSTART) */
+    TASK Task_CAN_RX {
+        PRIORITY = 10;
+        AUTOSTART = TRUE {
+            APPMODE = std_app_mode;
+        };
+        ACTIVATION = 1;
+        SCHEDULE = FULL;
+        EVENT = Event_CAN_RX;
+        RESOURCE = ICM_Resource;
+        STACKSIZE = 2048;
+    };
+
+    /* 10 ms: lê sensores */
+    TASK Task_Acquisition {
+        PRIORITY = 8;
+        AUTOSTART = FALSE;
+        ACTIVATION = 1;
+        SCHEDULE = FULL;
+        RESOURCE = ICM_Resource;
+        STACKSIZE = 2048;
+    };
+
+    /* 20 ms: filtros */
+    TASK Task_Processing {
+        PRIORITY = 6;
+        AUTOSTART = FALSE;
+        ACTIVATION = 1;
+        SCHEDULE = FULL;
+        RESOURCE = ICM_Resource;
+        STACKSIZE = 2048;
+    };
+
+    /* 50 ms: atualiza o painel (20 quadros por segundo) */
+    TASK Task_Display {
+        PRIORITY = 4;
+        AUTOSTART = FALSE;
+        ACTIVATION = 1;
+        SCHEDULE = FULL;
+        RESOURCE = ICM_Resource;
+        STACKSIZE = 2048;
+    };
+
+    /* 100 ms: timeouts do CAN e luzes de aviso */
+    TASK Task_Diagnostics {
+        PRIORITY = 3;
+        AUTOSTART = FALSE;
+        ACTIVATION = 1;
+        SCHEDULE = FULL;
+        RESOURCE = ICM_Resource;
+        STACKSIZE = 2048;
+    };
+
+    /* 1 s: odômetro e telemetria */
+    TASK Task_Logging {
+        PRIORITY = 1;
+        AUTOSTART = FALSE;
+        ACTIVATION = 1;
+        SCHEDULE = FULL;
+        RESOURCE = ICM_Resource;
+        STACKSIZE = 2048;
+    };
+
+    /* --- alarmes: um por tarefa periódica, todos no SystemCounter --- */
+
+    ALARM Alarm_Acquisition {
+        COUNTER = SystemCounter;
+        ACTION = ACTIVATETASK {
+            TASK = Task_Acquisition;
+        };
+        AUTOSTART = TRUE {
+            APPMODE = std_app_mode;
+            ALARMTIME = 10;
+            CYCLETIME = 10;
+        };
+    };
+
+    ALARM Alarm_Processing {
+        COUNTER = SystemCounter;
+        ACTION = ACTIVATETASK {
+            TASK = Task_Processing;
+        };
+        AUTOSTART = TRUE {
+            APPMODE = std_app_mode;
+            ALARMTIME = 20;
+            CYCLETIME = 20;
+        };
+    };
+
+    ALARM Alarm_Display {
+        COUNTER = SystemCounter;
+        ACTION = ACTIVATETASK {
+            TASK = Task_Display;
+        };
+        AUTOSTART = TRUE {
+            APPMODE = std_app_mode;
+            ALARMTIME = 50;
+            CYCLETIME = 50;
+        };
+    };
+
+    ALARM Alarm_Diagnostics {
+        COUNTER = SystemCounter;
+        ACTION = ACTIVATETASK {
+            TASK = Task_Diagnostics;
+        };
+        AUTOSTART = TRUE {
+            APPMODE = std_app_mode;
+            ALARMTIME = 100;
+            CYCLETIME = 100;
+        };
+    };
+
+    ALARM Alarm_Logging {
+        COUNTER = SystemCounter;
+        ACTION = ACTIVATETASK {
+            TASK = Task_Logging;
+        };
+        AUTOSTART = TRUE {
+            APPMODE = std_app_mode;
+            ALARMTIME = 1000;
+            CYCLETIME = 1000;
+        };
+    };
+};

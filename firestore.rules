@@ -1,0 +1,19 @@
+rules_version = '2';
+// Regras do Firestore do projeto jogo-27a51 (ranking compartilhado do jogo).
+// Qualquer pessoa pode ler a classificação e registrar uma partida nova,
+// mas ninguém pode alterar nem apagar partidas, e cada campo é conferido.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /ranking/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['name', 'age', 'car', 'mode', 'score', 'ts'])
+        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 12
+        && request.resource.data.age is int && request.resource.data.age >= 0 && request.resource.data.age <= 120
+        && request.resource.data.car is string && request.resource.data.car.size() <= 40
+        && request.resource.data.mode in ['TRÂNSITO', 'CORRIDA']
+        && request.resource.data.score is int && request.resource.data.score >= 0 && request.resource.data.score <= 100000
+        && request.resource.data.ts is timestamp;
+      allow update, delete: if false;
+    }
+  }
+}

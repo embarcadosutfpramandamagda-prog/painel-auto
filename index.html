@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<!--
+  Painel Automotivo com Trampoline e Controle em Tempo Real
+  Projeto 2 de Sistemas Embarcados (UTFPR) - Amanda e Magda
+
+  Estrutura: estilos em web/css/site.css, telas e menus em web/js/site.js,
+  jogo + painel de instrumentos em web/js/jogo.js, imagens em web/img/.
+-->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Painel Automotivo com Trampoline e Controle em Tempo Real | UTFPR</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- fontes do Google sem travar a abertura: a página aparece na hora e a fonte troca quando chegar.
+       Sem internet, a Pixelify Sans vem da pasta web/fonts e o resto cai nas fontes do sistema. -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700&family=Pixelify+Sans:wght@400;500;600;700&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="web/css/site.css">
+</head>
+<body>
+
+  <!-- Barra do topo: título e os dois botões (💻 pixel/real, 🌎 idioma) -->
+  <header class="top-bar">
+    <h1 class="top-bar-title" data-i18n="title">Painel Automotivo com Trampoline e Controle em Tempo Real</h1>
+    <div class="top-bar-icons">
+      <button type="button" class="mode-emoji-btn" id="btnTogglePixel" onclick="togglePixelMode()">
+        <img src="web/img/interface/icone-laptop-pixel.png" alt="" class="icon-pixel pixelated" draggable="false">
+        <span class="icon-emoji">💻</span>
+      </button>
+      <button type="button" class="mode-emoji-btn" id="btnToggleLang" onclick="toggleLanguage()">
+        <img src="web/img/interface/icone-globo-pixel.png" alt="" class="icon-pixel pixelated" draggable="false">
+        <span class="icon-emoji">🌎</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Laptop/tablet do meio. Tudo do menu, da garagem e do jogo acontece dentro dele -->
+  <main class="tablet-stage" id="gameFold">
+    <!-- nuvens no céu atrás do tablet (andam devagar de um lado pro outro) -->
+    <div class="sky-clouds" aria-hidden="true">
+      <img class="sky-cloud sky-cloud-pixel pixelated" src="web/img/interface/nuvens/nuvem-1.png" alt="" style="--x:-3%;--y:6%;--w:18vw;--d:0s;--dur:110s">
+      <img class="sky-cloud sky-cloud-pixel pixelated" src="web/img/interface/nuvens/nuvem-4.png" alt="" style="--x:82%;--y:3%;--w:16vw;--d:-20s;--dur:130s">
+      <img class="sky-cloud sky-cloud-pixel pixelated" src="web/img/interface/nuvens/nuvem-2.png" alt="" style="--x:35%;--y:1%;--w:8vw;--d:-40s;--dur:90s">
+      <img class="sky-cloud sky-cloud-pixel pixelated" src="web/img/interface/nuvens/nuvem-9.png" alt="" style="--x:-4%;--y:40%;--w:15vw;--d:-10s;--dur:120s">
+      <img class="sky-cloud sky-cloud-pixel pixelated" src="web/img/interface/nuvens/nuvem-7.png" alt="" style="--x:86%;--y:36%;--w:15vw;--d:-60s;--dur:140s">
+      <img class="sky-cloud sky-cloud-pixel pixelated" src="web/img/interface/nuvens/nuvem-11.png" alt="" style="--x:2%;--y:74%;--w:9vw;--d:-30s;--dur:100s">
+      <img class="sky-cloud sky-cloud-pixel pixelated" src="web/img/interface/nuvens/nuvem-13.png" alt="" style="--x:88%;--y:72%;--w:8vw;--d:-50s;--dur:95s">
+      <img class="sky-cloud sky-cloud-pixel pixelated" src="web/img/interface/nuvens/nuvem-6.png" alt="" style="--x:60%;--y:2%;--w:7vw;--d:-15s;--dur:85s">
+      <img class="sky-cloud sky-cloud-pixel pixelated" src="web/img/interface/nuvens/nuvem-10.png" alt="" style="--x:-6%;--y:88%;--w:22vw;--d:-70s;--dur:150s">
+      <img class="sky-cloud sky-cloud-pixel pixelated" src="web/img/interface/nuvens/nuvem-12.png" alt="" style="--x:64%;--y:86%;--w:28vw;--d:-25s;--dur:160s">
+      <!-- modo foto real: nuvens recortadas do céu da foto do campus (rodapé) -->
+      <img class="sky-cloud sky-cloud-real" src="web/img/interface/nuvens-reais/nuvem-real-1.png" alt="" loading="lazy" style="--x:-4%;--y:5%;--w:26vw;--d:0s;--dur:120s">
+      <img class="sky-cloud sky-cloud-real" src="web/img/interface/nuvens-reais/nuvem-real-7.png" alt="" loading="lazy" style="--x:78%;--y:2%;--w:22vw;--d:-30s;--dur:140s">
+      <img class="sky-cloud sky-cloud-real" src="web/img/interface/nuvens-reais/nuvem-real-3.png" alt="" loading="lazy" style="--x:40%;--y:2%;--w:11vw;--d:-50s;--dur:95s">
+      <img class="sky-cloud sky-cloud-real" src="web/img/interface/nuvens-reais/nuvem-real-2.png" alt="" loading="lazy" style="--x:-6%;--y:38%;--w:20vw;--d:-15s;--dur:130s">
+      <img class="sky-cloud sky-cloud-real" src="web/img/interface/nuvens-reais/nuvem-real-6.png" alt="" loading="lazy" style="--x:80%;--y:34%;--w:24vw;--d:-60s;--dur:150s">
+      <img class="sky-cloud sky-cloud-real" src="web/img/interface/nuvens-reais/nuvem-real-4.png" alt="" loading="lazy" style="--x:4%;--y:72%;--w:10vw;--d:-35s;--dur:100s">
+      <img class="sky-cloud sky-cloud-real" src="web/img/interface/nuvens-reais/nuvem-real-5.png" alt="" loading="lazy" style="--x:84%;--y:70%;--w:14vw;--d:-45s;--dur:110s">
+      <img class="sky-cloud sky-cloud-real" src="web/img/interface/nuvens-reais/nuvem-real-8.png" alt="" loading="lazy" style="--x:-5%;--y:80%;--w:24vw;--d:-70s;--dur:160s">
+      <img class="sky-cloud sky-cloud-real" src="web/img/interface/nuvens-reais/nuvem-real-2.png" alt="" loading="lazy" style="--x:66%;--y:76%;--w:26vw;--d:-25s;--dur:170s">
+    </div>
+    <div class="tablet-frame">
+      <img src="web/img/interface/moldura-laptop-pixel.png" alt="" class="tablet-frame-img frame-pixel pixelated" draggable="false">
+      <img src="web/img/interface/moldura-tablet-real.png" alt="" class="tablet-frame-img frame-real" draggable="false">
+
+      <div class="tablet-screen" id="tabletScreen">
+        <!-- fundo: entrada da UTFPR -->
+        <img src="web/img/cenarios/entrada-pixel.jpg" alt="Entrada UTFPR" class="screen-bg-img bg-pixel pixelated" draggable="false">
+        <img src="web/img/cenarios/entrada-real.jpg" alt="Entrada UTFPR" class="screen-bg-img bg-real" draggable="false">
+
+        <div class="utfpr-menu-center">
+
+          <!-- menu principal -->
+          <div class="utfpr-screen-view active" id="viewMenuMain">
+            <button type="button" class="pixel-btn" onclick="openPilotScreen()">
+              <div class="pixel-btn-content">
+                <img src="web/img/interface/botao-pixel.svg" alt="" class="btn-pixel-asset">
+                <span class="btn-pixel-label" data-i18n="play">JOGAR</span>
+              </div>
+              <span class="btn-real-text" data-i18n="play">JOGAR</span>
+            </button>
+            <button type="button" class="pixel-btn" onclick="openRankingScreen()">
+              <div class="pixel-btn-content">
+                <img src="web/img/interface/botao-pixel.svg" alt="" class="btn-pixel-asset">
+                <span class="btn-pixel-label" data-i18n="ranking">CLASSIFICAÇÃO</span>
+              </div>
+              <span class="btn-real-text" data-i18n="ranking">CLASSIFICAÇÃO</span>
+            </button>
+            <button type="button" class="pixel-btn" onclick="openGarageScreen()">
+              <div class="pixel-btn-content">
+                <img src="web/img/interface/botao-pixel.svg" alt="" class="btn-pixel-asset">
+                <span class="btn-pixel-label" data-i18n="garage">GARAGEM</span>
+              </div>
+              <span class="btn-real-text" data-i18n="garage">GARAGEM</span>
+            </button>
+          </div>
+
+          <!-- nome e idade de quem vai jogar -->
+          <div class="utfpr-screen-view" id="viewMenuPilot">
+            <label class="pilot-field">
+              <span class="field-tag" data-i18n="name">NOME</span>
+              <span class="pixel-input-box">
+                <input type="text" id="pilotNameField" class="pixel-input-text" maxlength="12" value="AMANDA" placeholder="NOME" data-i18n-ph="name" autocomplete="off" spellcheck="false" enterkeyhint="next">
+                <svg class="field-pencil" viewBox="0 0 8 8" aria-hidden="true"><path fill="#FFBB00" d="M5 0h1v1h1v1h1v1H7v1H6v1H5v1H4v1H3v1H0V5h1V4h1V3h1V2h1V1h1z"/><path fill="#1c0326" d="M1 6h1v1H1z"/><path fill="#fff2b3" d="M5 1h1v1H5zM6 2h1v1H6z"/></svg>
+              </span>
+            </label>
+            <label class="pilot-field">
+              <span class="field-tag" data-i18n="age">IDADE</span>
+              <span class="pixel-input-box">
+                <input type="number" id="pilotAgeField" class="pixel-input-text" min="5" max="150" value="21" placeholder="IDADE" data-i18n-ph="age" autocomplete="off" inputmode="numeric" enterkeyhint="go">
+                <svg class="field-pencil" viewBox="0 0 8 8" aria-hidden="true"><path fill="#FFBB00" d="M5 0h1v1h1v1h1v1H7v1H6v1H5v1H4v1H3v1H0V5h1V4h1V3h1V2h1V1h1z"/><path fill="#1c0326" d="M1 6h1v1H1z"/><path fill="#fff2b3" d="M5 1h1v1H5zM6 2h1v1H6z"/></svg>
+              </span>
+            </label>
+            <button type="button" class="pixel-btn" onclick="confirmPilot()">
+              <div class="pixel-btn-content">
+                <img src="web/img/interface/botao-pixel.svg" alt="" class="btn-pixel-asset">
+                <span class="btn-pixel-label" data-i18n="start">INICIAR</span>
+              </div>
+              <span class="btn-real-text" data-i18n="start">INICIAR</span>
+            </button>
+            <button type="button" class="pixel-btn" onclick="openMainScreen()">
+              <div class="pixel-btn-content">
+                <img src="web/img/interface/botao-pixel.svg" alt="" class="btn-pixel-asset">
+                <span class="btn-pixel-label" data-i18n="back">VOLTAR</span>
+              </div>
+              <span class="btn-real-text" data-i18n="back">VOLTAR</span>
+            </button>
+          </div>
+
+          <!-- escolha do carro -->
+          <div class="utfpr-screen-view" id="viewMenuCar">
+            <div class="car-pick">
+              <span class="field-tag car-pick-tag" data-i18n="chooseCar">ESCOLHA SEU CARRO</span>
+              <!-- o carro gira arrastando, nos dois modos -->
+              <div class="car-pick-stage spin360">
+                <div class="car-pick-pixel">
+                  <img class="pixelated" src="web/img/cenarios/showroom-pixel.png" alt="" draggable="false">
+                  <img id="carPickPixelCar" class="pixelated" src="web/img/carros/camaro/giro-360-pixel/01.png" alt="" draggable="false">
+                </div>
+                <div class="car-pick-real">
+                  <img src="web/img/cenarios/showroom.jpg" alt="" draggable="false">
+                  <img id="carPickRealCar" src="web/img/carros/camaro/giro-360/01.webp" alt="" draggable="false">
+                </div>
+                <div class="drag-hint" data-i18n="drag">⟲ ARRASTE PARA GIRAR 360°</div>
+              </div>
+              <div class="car-pick-bar">
+                <button type="button" class="g-arrow-btn" onclick="prevCar()" data-i18n-title="prevCar">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="20" y1="12" x2="4" y2="12"></line><polyline points="10 6 4 12 10 18"></polyline></svg>
+                </button>
+                <span class="car-pick-name" id="carPickName">Chevrolet Camaro Conversível</span>
+                <button type="button" class="g-arrow-btn" onclick="nextCar()" data-i18n-title="nextCar">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"></line><polyline points="14 6 20 12 14 18"></polyline></svg>
+                </button>
+              </div>
+            </div>
+            <div class="car-pick-actions">
+              <button type="button" class="pixel-btn" onclick="openPilotScreen()">
+                <div class="pixel-btn-content">
+                  <img src="web/img/interface/botao-pixel.svg" alt="" class="btn-pixel-asset">
+                  <span class="btn-pixel-label" data-i18n="back">VOLTAR</span>
+                </div>
+                <span class="btn-real-text" data-i18n="back">VOLTAR</span>
+              </button>
+              <button type="button" class="pixel-btn" onclick="confirmCar()">
+                <div class="pixel-btn-content">
+                  <img src="web/img/interface/botao-pixel.svg" alt="" class="btn-pixel-asset">
+                  <span class="btn-pixel-label" data-i18n="choose">ESCOLHER</span>
+                </div>
+                <span class="btn-real-text" data-i18n="choose">ESCOLHER</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- modo de jogo -->
+          <div class="utfpr-screen-view" id="viewMenuModes">
+            <button type="button" class="pixel-btn" onclick="startGame('PASSEIO')">
+              <div class="pixel-btn-content">
+                <img src="web/img/interface/botao-pixel.svg" alt="" class="btn-pixel-asset">
+                <span class="btn-pixel-label" data-i18n="m_passeio">PASSEIO</span>
+              </div>
+              <span class="btn-real-text" data-i18n="m_passeio">PASSEIO</span>
+            </button>
+            <button type="button" class="pixel-btn" onclick="startGame('TRÂNSITO')">
+              <div class="pixel-btn-content">
+                <img src="web/img/interface/botao-pixel.svg" alt="" class="btn-pixel-asset">
+                <span class="btn-pixel-label" data-i18n="m_transito">TRÂNSITO</span>
+              </div>
+              <span class="btn-real-text" data-i18n="m_transito">TRÂNSITO</span>
+            </button>
+            <button type="button" class="pixel-btn" onclick="startGame('CORRIDA')">
+              <div class="pixel-btn-content">
+                <img src="web/img/interface/botao-pixel.svg" alt="" class="btn-pixel-asset">
+                <span class="btn-pixel-label" data-i18n="m_corrida">CORRIDA</span>
+              </div>
+              <span class="btn-real-text" data-i18n="m_corrida">CORRIDA</span>
+            </button>
+            <button type="button" class="pixel-btn" onclick="openCarScreen()">
+              <div class="pixel-btn-content">
+                <img src="web/img/interface/botao-pixel.svg" alt="" class="btn-pixel-asset">
+                <span class="btn-pixel-label" data-i18n="back">VOLTAR</span>
+              </div>
+              <span class="btn-real-text" data-i18n="back">VOLTAR</span>
+            </button>
+          </div>
+
+          <!-- ranking -->
+          <div class="utfpr-screen-view" id="viewMenuRanking">
+            <div class="utfpr-ranking-panel">
+              <div class="ranking-panel-title" data-i18n="rankTitle">★ CLASSIFICAÇÃO ★</div>
+              <div class="ranking-panel-filters" id="menuRankFilters">
+                <button type="button" class="rank-tab-btn active" data-f="ALL" onclick="filterRanking('ALL')" data-i18n="all">TODOS</button>
+                <button type="button" class="rank-tab-btn" data-f="TRÂNSITO" onclick="filterRanking('TRÂNSITO')" data-i18n="m_transito">TRÂNSITO</button>
+                <button type="button" class="rank-tab-btn" data-f="CORRIDA" onclick="filterRanking('CORRIDA')" data-i18n="m_corrida">CORRIDA</button>
+              </div>
+              <div class="ranking-panel-table" id="menuRankingRows"></div>
+              <div class="ranking-panel-footer">
+                <button type="button" class="pixel-btn" onclick="openMainScreen()">
+                  <div class="pixel-btn-content">
+                    <img src="web/img/interface/botao-pixel.svg" alt="" class="btn-pixel-asset">
+                    <span class="btn-pixel-label" data-i18n="back">VOLTAR</span>
+                  </div>
+                  <span class="btn-real-text" data-i18n="back">VOLTAR</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- garagem: data-sub alterna entre "exterior" (o carro) e "interior" (o painel) -->
+        <div class="tablet-garage" id="viewMenuGarage" data-sub="exterior">
+          <!-- carro, versão pixel -->
+          <div class="g-layer spin360" id="garagePixelView">
+            <img src="web/img/cenarios/showroom-pixel.png" alt="Showroom" class="g-img pixelated" draggable="false">
+            <img id="garagePixelCar" src="web/img/carros/camaro/giro-360-pixel/01.png" alt="Carro na garagem" class="g-img garage-car-layer pixelated" draggable="false">
+            <div class="drag-hint" data-i18n="drag">⟲ ARRASTE PARA GIRAR 360°</div>
+          </div>
+          <!-- carro, versão real: showroom que gira arrastando -->
+          <div class="g-layer spin360" id="garageRealView">
+            <img src="web/img/cenarios/showroom.jpg" alt="Showroom" class="g-img" draggable="false">
+            <img id="hangarCarImg" src="web/img/carros/camaro/giro-360/01.webp" alt="Carro 3D" class="g-img garage-car-layer" draggable="false">
+            <img id="carBrandLogo" src="web/img/carros/camaro/logo.png" alt="Logo" class="brand-logo-badge" draggable="false">
+            <div class="drag-hint" data-i18n="drag">⟲ ARRASTE PARA GIRAR 360°</div>
+          </div>
+          <!-- interior, pixel e real -->
+          <div class="g-layer" id="interiorPixelView">
+            <img id="interiorPixelImg" src="web/img/carros/camaro/interior-pixel.png" alt="Interior" class="g-img pixelated" draggable="false">
+          </div>
+          <div class="g-layer" id="interiorRealView">
+            <img id="interiorImg" src="web/img/carros/camaro/interior-real.jpg" alt="Interior" class="g-img" draggable="false">
+          </div>
+
+          <!-- bancada de testes do ICM: o painel fora do jogo, com cada sinal controlado na mão -->
+          <div class="g-layer bench" id="icmBenchView">
+            <div class="bench-head">
+              <span data-i18n="benchTitle">BANCADA DE TESTES DO ICM</span>
+              <small data-i18n="benchSub">mesmo código do jogo: CAN M1/M2 → ISR2_CAN → tarefas OSEK → painel</small>
+            </div>
+            <div class="bench-screen"><canvas id="benchCanvas"></canvas></div>
+            <div class="bench-status" id="benchStatus"></div>
+            <div class="bench-keys"><span data-i18n="benchKeys">TECLADO: ↑ ACELERA · ↓ FREIA · ← → SETAS</span> <span class="bench-mode" id="benchMode"></span></div>
+            <div class="bench-tabs" role="tablist">
+              <button type="button" class="bench-tab on" data-tab="ctl" data-i18n="tabCtl">CONTROLES</button>
+              <button type="button" class="bench-tab" data-tab="osek" data-i18n="tabOsek">TAREFAS OSEK</button>
+              <button type="button" class="bench-tab" data-tab="can" data-i18n="tabCan">SINAL CAN</button>
+              <button type="button" class="bench-tab" data-tab="chk" data-i18n="tabChk">VERIFICAÇÕES</button>
+            </div>
+            <div class="bench-panel" data-panel="osek" hidden>
+              <div class="bench-tl-head"><span data-i18n="tlTitle">LINHA DO TEMPO DA CPU (prioridade maior em cima)</span>
+                <span class="bench-tl-zoom"><button type="button" class="bench-zoom on" data-zoom="100">100 ms</button><button type="button" class="bench-zoom" data-zoom="1000">1 s</button></span></div>
+              <canvas id="benchTimeline"></canvas>
+              <div class="bench-tl-legend" data-i18n="tlLegend">▮ executando · │ ativação (alarme / ISR) · estados OSEK: SUSPENDED → READY → RUNNING → WAITING (só a CAN_RX espera evento)</div>
+              <div class="bench-table-wrap"><table class="bench-table" id="benchTaskTable"></table></div>
+            </div>
+            <div class="bench-panel" data-panel="can" hidden>
+              <div id="benchCanPipe"></div>
+            </div>
+            <div class="bench-panel" data-panel="chk" hidden>
+              <div class="bench-chk-grid">
+                <div><h4 data-i18n="chkLive">AO VIVO (este navegador)</h4><ul class="bench-chk" id="benchChkLive"></ul></div>
+                <div><h4 data-i18n="chkFw">FIRMWARE C (SIL 30 s + GoogleTest)</h4><ul class="bench-chk" id="benchChkFw"></ul></div>
+              </div>
+            </div>
+            <div class="bench-controls bench-panel" data-panel="ctl">
+              <div class="bench-sliders">
+                <label class="bench-slider"><span data-i18n="bSpeed">VELOCIDADE (M2)</span><input type="range" min="0" max="250" value="0" step="1" data-bench="kmh"><b data-out="kmh"></b></label>
+                <label class="bench-slider"><span data-i18n="bRpm">ROTAÇÃO (M1)</span><input type="range" min="0" max="8000" value="850" step="50" data-bench="rpm"><b data-out="rpm"></b></label>
+                <label class="bench-slider"><span data-i18n="bFuel">COMBUSTÍVEL</span><input type="range" min="0" max="100" value="60" step="1" data-bench="fuel"><b data-out="fuel"></b></label>
+                <label class="bench-slider"><span data-i18n="bTemp">TEMPERATURA</span><input type="range" min="40" max="130" value="88" step="1" data-bench="temp"><b data-out="temp"></b></label>
+              </div>
+              <div class="bench-toggles">
+                <button type="button" class="bench-tog" data-bench="turn" data-val="1" data-i18n="bTurnL">◄ SETA</button>
+                <button type="button" class="bench-tog" data-bench="turn" data-val="2" data-i18n="bTurnR">SETA ►</button>
+                <button type="button" class="bench-tog" data-bench="hazard" data-val="1" data-i18n="bHazard">PISCA-ALERTA</button>
+                <button type="button" class="bench-tog" data-bench="hand" data-val="1" data-i18n="bHand">FREIO DE MÃO</button>
+                <button type="button" class="bench-tog" data-bench="belt" data-val="1" data-i18n="bBelt">CINTO SOLTO</button>
+                <button type="button" class="bench-tog" data-bench="stall" data-val="1" data-i18n="bStall">MOTOR DESLIGADO</button>
+                <button type="button" class="bench-tog" data-bench="can" data-val="1" data-i18n="bCan">CAN MUDO</button>
+                <button type="button" class="bench-tog" data-bench="tempSensor" data-val="1" data-i18n="bTempS">SENSOR TEMP.</button>
+                <button type="button" class="bench-tog" data-bench="fuelSensor" data-val="1" data-i18n="bFuelS">SENSOR COMB.</button>
+                <button type="button" class="bench-tog" data-bench="oor" data-val="1" data-i18n="bOor">CAN FORA DA FAIXA</button>
+                <button type="button" class="bench-tog" data-bench="bulb" data-val="0" data-i18n="bBulb">TESTE DE LUZES</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- no carro o VOLTAR vai pro menu; no interior volta pro carro -->
+          <div class="g-corner g-corner-left">
+            <button type="button" class="pixel-btn" onclick="garageBack()">
+              <div class="pixel-btn-content">
+                <img src="web/img/interface/botao-pixel.svg" alt="" class="btn-pixel-asset">
+                <span class="btn-pixel-label" data-i18n="back">VOLTAR</span>
+              </div>
+              <span class="btn-real-text" data-i18n="back">VOLTAR</span>
+            </button>
+          </div>
+
+          <!-- no carro: primeiro a bancada de testes do ICM -->
+          <div class="g-corner g-corner-right only-exterior">
+            <button type="button" class="pixel-btn" onclick="setGarageSubView('icm')">
+              <div class="pixel-btn-content">
+                <img src="web/img/interface/botao-pixel.svg" alt="" class="btn-pixel-asset">
+                <span class="btn-pixel-label" data-i18n="testIcm">TESTAR ICM</span>
+              </div>
+              <span class="btn-real-text" data-i18n="testIcm">TESTAR ICM</span>
+            </button>
+          </div>
+
+          <!-- na bancada: segue pro painel (interior do carro) -->
+          <div class="g-corner g-corner-right only-icm">
+            <button type="button" class="pixel-btn" onclick="setGarageSubView('interior')">
+              <div class="pixel-btn-content">
+                <img src="web/img/interface/botao-pixel.svg" alt="" class="btn-pixel-asset">
+                <span class="btn-pixel-label" data-i18n="panel">PAINEL</span>
+              </div>
+              <span class="btn-real-text" data-i18n="panel">PAINEL</span>
+            </button>
+          </div>
+
+          <!-- barra branca com as setas pra trocar de carro -->
+          <div class="garage-bar only-exterior">
+            <button type="button" class="g-arrow-btn" onclick="prevCar()" data-i18n-title="prevCar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="20" y1="12" x2="4" y2="12"></line><polyline points="10 6 4 12 10 18"></polyline></svg>
+            </button>
+            <h2 class="selector-car-title" id="selectorTitle">Chevrolet Camaro Conversível</h2>
+            <button type="button" class="g-arrow-btn" onclick="nextCar()" data-i18n-title="nextCar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"></line><polyline points="14 6 20 12 14 18"></polyline></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- o jogo (web/js/jogo.js) desenha aqui -->
+        <div class="game-canvas-overlay" id="gameCanvasOverlay">
+          <canvas id="gameCanvas"></canvas>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Rodapé: campus e as autoras -->
+  <footer class="credits-fold" id="creditsFold">
+    <img src="web/img/cenarios/campus-pixel.jpg" alt="Campus UTFPR Ponta Grossa" class="credits-bg-img bg-pixel pixelated" draggable="false">
+    <img src="web/img/cenarios/campus-real.jpg" alt="Campus UTFPR Ponta Grossa" class="credits-bg-img bg-real" draggable="false">
+
+    <img src="web/img/autoras/amanda-pixel.png" alt="Amanda" class="avatar avatar-amanda avatar-pixel pixelated" draggable="false">
+    <img src="web/img/autoras/magda-pixel.png" alt="Magda" class="avatar avatar-magda avatar-pixel pixelated" draggable="false">
+    <img src="web/img/autoras/amanda-real.png" alt="Amanda" class="avatar avatar-amanda avatar-real" draggable="false" loading="lazy">
+    <img src="web/img/autoras/magda-real.png" alt="Magda" class="avatar avatar-magda avatar-real" draggable="false" loading="lazy">
+    <span class="avatar-name name-amanda">Amanda</span>
+    <span class="avatar-name name-magda">Magda</span>
+  </footer>
+
+  <script src="web/js/evidencias.js"></script>
+  <script src="web/js/jogo.js"></script>
+  <script src="web/js/site.js"></script>
+</body>
+</html>

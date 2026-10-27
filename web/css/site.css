@@ -1,0 +1,1018 @@
+/* cópia local da fonte pixel, pra funcionar offline (licença em web/fonts/PixelifySans-OFL.txt) */
+@font-face {
+  font-family: 'Pixelify Sans';
+  src: url('../fonts/PixelifySans-Medium.ttf') format('truetype');
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+/*
+ * Estilos do site do Painel Automotivo (Projeto 2 - Sistemas Embarcados).
+ *
+ * O site tem dois visuais: pixel art (padrão) e foto real. A troca é feita
+ * pela classe .real-mode no <body>, então as regras do modo real ficam
+ * todas juntas no fim do arquivo.
+ *
+ * Quase tudo dentro do tablet usa unidades cqw/cqh (tamanho relativo à tela
+ * do tablet, não à janela). Os max(..., Npx) seguram um tamanho mínimo
+ * legível no celular.
+ */
+
+:root {
+  --sky: #64C1FA;          /* mesmo azul do céu das imagens do campus */
+  --gold: #FFBB00;
+  --ink: #1c0326;
+  --bar-h: clamp(44px, 5.2vw, 64px);
+  --bar-fade: clamp(18px, 2.4vw, 32px);
+  --emoji-font: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+}
+
+/* --- Base --- */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  /* nada de selecionar texto ou arrastar imagem sem querer enquanto joga */
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+input, textarea {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+html { scroll-behavior: smooth; background: var(--sky); }
+::selection { background: transparent !important; color: inherit !important; }
+
+body {
+  background-color: var(--sky);
+  color: #0f172a;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+img {
+  -webkit-user-drag: none !important;
+  pointer-events: none !important;
+  display: block;
+}
+
+.pixelated {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* --- Barra do topo --- */
+
+.top-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--bar-h);
+  z-index: 1000;
+  background: transparent;
+  /* coluna da esquerda vazia com a mesma largura dos ícones,
+     senão o título fica deslocado em relação ao tablet */
+  display: grid;
+  grid-template-columns: var(--icons-w) minmax(0, 1fr) var(--icons-w);
+  align-items: center;
+  column-gap: clamp(8px, 1.2vw, 16px);
+  padding: 0 clamp(12px, 3vw, 40px);
+  --icon-size: clamp(26px, 3.2vw, 42px);
+  --icon-gap: clamp(6px, 0.9vw, 12px);
+  --icons-w: calc(var(--icon-size) * 2 + var(--icon-gap));
+}
+
+/* fundo da barra: azul em cima, sumindo para baixo. Passa um pouco da
+   altura da barra pra não aparecer uma linha reta quando a página rola */
+.top-bar::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: calc(100% + var(--bar-fade));
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(180deg,
+    rgba(100, 193, 250, 1) 0%,
+    rgba(100, 193, 250, 0.97) 45%,
+    rgba(100, 193, 250, 0.8) 65%,
+    rgba(100, 193, 250, 0.45) 82%,
+    rgba(100, 193, 250, 0) 100%);
+  -webkit-backdrop-filter: blur(6px);
+          backdrop-filter: blur(6px);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 55%, rgba(0,0,0,0.6) 78%, rgba(0,0,0,0) 100%);
+          mask-image: linear-gradient(180deg, #000 0%, #000 55%, rgba(0,0,0,0.6) 78%, rgba(0,0,0,0) 100%);
+}
+
+.top-bar-title {
+  font-family: 'Pixelify Sans', monospace;
+  font-weight: 600;
+  font-size: clamp(11px, 1.7vw, 22px);
+  letter-spacing: 0.5px;
+  color: #ffffff;
+  line-height: 1.15;
+  text-shadow: 2px 2px 0 rgba(15, 50, 90, 0.35);
+  grid-column: 2;
+  min-width: 0;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.top-bar-icons {
+  grid-column: 3;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--icon-gap);
+}
+
+.mode-emoji-btn {
+  background: transparent;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: var(--emoji-font);
+  font-size: calc(var(--icon-size) * 0.86);
+  line-height: 1;
+  width: var(--icon-size);
+  height: var(--icon-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25));
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.mode-emoji-btn:hover { transform: scale(1.15) rotate(-4deg); }
+.mode-emoji-btn:active { transform: scale(0.92); }
+.mode-emoji-btn:focus-visible { outline: 2px solid #ffffff; outline-offset: 4px; border-radius: 6px; }
+
+/* no modo pixel os ícones são desenhos pixel; no real, emoji */
+.icon-pixel { height: 100%; width: auto; }
+.icon-emoji { display: none; }
+
+/* --- Tablet / laptop do meio --- */
+
+.tablet-stage {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  padding: calc(var(--bar-h) + clamp(6px, 1.2vw, 16px)) 0 clamp(18px, 3vw, 40px);
+  display: flex;
+  justify-content: center;
+  background: var(--sky);
+}
+
+.tablet-frame {
+  position: relative;
+  width: min(94vw, 1180px, calc((100vh - var(--bar-h) - 56px) * 1.455));
+  /* a caixa tem sempre a proporção do tablet (435x299), nos dois modos: assim trocar
+     pixel/real não muda a altura da página e a tela não pula.
+     O laptop pixel (527x338) é um pouco mais baixo e fica encostado em cima;
+     a tela dele vai de x 27..500 e y 33..314 da imagem, convertido pra caixa abaixo. */
+  aspect-ratio: 435 / 299;
+  --scr-left: 5.0%;
+  --scr-top: 9.0%;
+  --scr-w: 90.0%;
+  --scr-h: 77.8%;
+  --scr-radius: 0px;
+}
+
+.tablet-frame-img {
+  width: 100%;
+  height: auto;
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  filter: drop-shadow(0 10px 22px rgba(10, 40, 80, 0.28));
+}
+.frame-real { display: none; }
+
+.tablet-screen {
+  position: absolute;
+  left: var(--scr-left);
+  top: var(--scr-top);
+  width: var(--scr-w);
+  height: var(--scr-h);
+  z-index: 2;
+  overflow: hidden;
+  border-radius: var(--scr-radius);
+  background: var(--sky);
+  container-type: size;   /* é isso que faz o cqw/cqh funcionar */
+}
+
+.screen-bg-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+}
+.bg-real { display: none; }
+
+/* menu do meio, em cima da pista */
+.utfpr-menu-center {
+  position: absolute;
+  left: 52%;   /* 52 e não 50: assim os botões ficam em cima da rua da imagem */
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.utfpr-screen-view {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.6cqh;
+}
+.utfpr-screen-view.active { display: flex; }
+
+/* --- Botões pixel --- */
+
+.pixel-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: block;
+  line-height: 0;
+  outline: none;
+  transition: transform 0.08s ease, filter 0.08s ease;
+}
+.pixel-btn:hover {
+  transform: scale(1.05);
+  filter: brightness(1.12) drop-shadow(0 0 14px rgba(255, 187, 0, 0.75));
+}
+.pixel-btn:active { transform: scale(0.96); }
+.pixel-btn:focus-visible { filter: brightness(1.12) drop-shadow(0 0 10px #ffffff); }
+
+.pixel-btn-content {
+  position: relative;
+  width: max(22cqw, 84px);
+  aspect-ratio: 216 / 72;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pixel-btn-content img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.btn-pixel-label {
+  position: relative;
+  z-index: 2;
+  font-family: 'Press Start 2P', 'Pixelify Sans', monospace;
+  font-size: max(1.75cqw, 7px);
+  color: var(--ink);
+  letter-spacing: 0.5px;
+  transform: translate(-3%, -6%);   /* compensa a sombra do desenho do botão */
+  white-space: nowrap;
+}
+
+.btn-real-text { display: none; }
+
+/* --- Campos de nome e idade --- */
+
+/* tem que dar pra ver que é campo e não botão: caixa escura, etiqueta na borda e o lápis */
+#viewMenuPilot { gap: 2.6cqh; }
+
+.pilot-field {
+  position: relative;
+  display: block;
+  cursor: text;
+}
+
+.field-tag {
+  position: absolute;
+  top: 0;
+  left: 9%;
+  transform: translateY(-58%);
+  z-index: 6;
+  font-family: 'Press Start 2P', 'Pixelify Sans', monospace;
+  font-size: max(1.05cqw, 6px);
+  line-height: 1;
+  color: var(--gold);
+  background: #1c0326;
+  padding: max(0.45cqw, 2px) max(0.7cqw, 3px);
+  letter-spacing: 0.5px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.pixel-input-box {
+  position: relative;
+  width: max(22cqw, 84px);
+  aspect-ratio: 216 / 72;
+  display: flex;
+  align-items: center;
+  background: #120a24;
+  border: max(0.3cqw, 2px) solid var(--gold);
+  box-shadow:
+    0 0 0 max(0.2cqw, 2px) #1c0326,
+    max(0.45cqw, 3px) max(0.45cqw, 3px) 0 max(0.2cqw, 2px) rgba(28, 3, 38, 0.85),
+    inset 0 max(0.3cqw, 2px) 0 rgba(0, 0, 0, 0.45);
+  transition: transform 0.08s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+.pilot-field:hover .pixel-input-box { transform: translateY(-1px); border-color: #ffd34d; }
+.pixel-input-box:focus-within {
+  border-color: #fff2b3;
+  box-shadow:
+    0 0 0 max(0.2cqw, 2px) #1c0326,
+    max(0.45cqw, 3px) max(0.45cqw, 3px) 0 max(0.2cqw, 2px) rgba(28, 3, 38, 0.85),
+    0 0 max(1.4cqw, 8px) rgba(255, 187, 0, 0.85);
+}
+
+.pixel-input-text {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: 'Press Start 2P', 'Pixelify Sans', monospace;
+  font-size: max(1.7cqw, 7px);
+  color: #ffffff;
+  caret-color: var(--gold);
+  text-align: center;
+  text-transform: uppercase;
+  padding: 0 max(3.2cqw, 16px) 0 max(1cqw, 5px);   /* espaço à direita pro lápis */
+  letter-spacing: 0.5px;
+}
+/* tira as setinhas do input number */
+.pixel-input-text::-webkit-inner-spin-button,
+.pixel-input-text::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.pixel-input-text[type=number] { -moz-appearance: textfield; appearance: textfield; }
+.pixel-input-text::placeholder { color: #8b7fa8; opacity: 1; }
+
+.field-pencil {
+  position: absolute;
+  right: max(1cqw, 5px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: max(1.9cqw, 10px);
+  height: max(1.9cqw, 10px);
+  pointer-events: none;
+  shape-rendering: crispEdges;
+  animation: pencil-bob 1.6s steps(2, end) infinite;
+}
+.pixel-input-box:focus-within .field-pencil { animation: none; opacity: 0.45; }
+@keyframes pencil-bob {
+  0%, 100% { transform: translateY(-50%); }
+  50% { transform: translateY(-62%); }
+}
+@media (prefers-reduced-motion: reduce) { .field-pencil { animation: none; } }
+
+/* --- Ranking --- */
+
+.utfpr-ranking-panel {
+  width: max(74cqw, min(92cqw, 260px));
+  max-height: 94cqh;
+  overflow: hidden;
+  background: rgba(14, 18, 30, 0.96);
+  border: 3px solid var(--gold);
+  box-shadow: 0 0 0 3px #000000, 0 12px 32px rgba(0, 0, 0, 0.85);
+  padding: 2cqw;
+  display: flex;
+  flex-direction: column;
+  gap: 1.6cqh;
+  border-radius: 4px;
+  font-family: 'Press Start 2P', 'Pixelify Sans', monospace;
+}
+.ranking-panel-title {
+  font-size: max(1.6cqw, 7px);
+  color: #facc15;
+  text-align: center;
+  border-bottom: 2px dashed var(--gold);
+  padding-bottom: 1.2cqh;
+}
+.ranking-panel-filters {
+  display: flex;
+  justify-content: center;
+  gap: 0.8cqw;
+  flex-wrap: wrap;
+}
+.rank-tab-btn {
+  background: #020617;
+  border: 1px solid #64748b;
+  color: #cbd5e1;
+  font-family: 'Press Start 2P', 'Pixelify Sans', monospace;
+  font-size: max(1.15cqw, 6px);
+  padding: max(0.9cqw, 3px) max(1.2cqw, 4px);
+  cursor: pointer;
+  border-radius: 2px;
+}
+.rank-tab-btn.active { background: var(--gold); color: #000000; border-color: #ffffff; }
+.ranking-panel-table {
+  background: #040814;
+  border: 1px solid #334155;
+  padding: 1cqw;
+  max-height: max(44cqh, 60px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5cqh;
+}
+.rank-p-row {
+  display: grid;
+  grid-template-columns: 7cqw 1.4fr 1fr 1fr 8cqw;
+  align-items: center;
+  gap: 0.8cqw;
+  font-family: 'VT323', 'Pixelify Sans', monospace;
+  font-size: max(2.5cqw, 11px);
+  color: #e2e8f0;
+  padding: 0.2cqh 0.6cqw;
+  border-bottom: 1px dashed #1e293b;
+}
+.rank-p-row.gold { color: #facc15; background: rgba(250, 204, 21, 0.10); }
+.rank-p-row.silver { color: #e2e8f0; background: rgba(203, 213, 225, 0.08); }
+.rank-p-row.bronze { color: #e8a06a; background: rgba(217, 138, 78, 0.09); }
+.rank-pos { display: inline-flex; align-items: center; gap: 0.4em; white-space: nowrap; }
+.trophy { width: 1.25em; height: 1.25em; flex: none; }
+.rank-empty {
+  padding: 4cqh 1cqw;
+  text-align: center;
+  color: #94a3b8;
+  font-size: max(1.5cqw, 7px);
+  line-height: 1.7;
+}
+.rank-empty span { color: var(--gold); font-size: max(1.2cqw, 6px); }
+.ranking-panel-footer { display: flex; justify-content: center; }
+.ranking-panel-footer .pixel-btn-content { width: max(17cqw, 72px); }
+
+/* --- Garagem (abre dentro do tablet) --- */
+
+/* duas telas: o carro (com VOLTAR, PAINEL e a barra branca embaixo)
+   e o painel/interior (só com o VOLTAR). Quem decide é o data-sub. */
+.tablet-garage {
+  --gbar-h: max(15.8cqh, 34px);
+  --gbar-gap: max(2.6cqh, 5px);
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: none;
+  background: #070b12;
+}
+.tablet-garage.active { display: block; }
+
+.g-layer {
+  position: absolute;
+  inset: 0;
+  display: none;
+}
+.g-layer.show { display: block; }
+
+.g-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+}
+
+.spin360 { cursor: grab; touch-action: pan-y; user-select: none; }
+.spin360.is-dragging { cursor: grabbing; }
+.garage-car-layer { z-index: 2; }
+
+.brand-logo-badge {
+  position: absolute;
+  bottom: 3cqh;
+  right: 3cqw;
+  width: 13cqw;
+  height: auto;
+  z-index: 5;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
+}
+
+.drag-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 3cqh;
+  transform: translateX(-50%);
+  z-index: 5;
+  font-family: 'Montserrat', sans-serif;
+  font-size: max(1.3cqw, 8px);
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(0, 0, 0, 0.45);
+  padding: 0.6cqw 1.4cqw;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* VOLTAR e PAINEL nos cantos de cima */
+.g-corner {
+  position: absolute;
+  top: 4cqh;
+  z-index: 15;
+}
+.g-corner-left { left: 3.5cqw; }
+.g-corner-right { right: 3.5cqw; }
+.g-corner .pixel-btn-content { width: max(19cqw, 84px); }
+.g-corner .btn-pixel-label { font-size: max(1.6cqw, 7px); }
+
+/* na tela do carro a imagem para antes da barra branca */
+.tablet-garage[data-sub="exterior"] { background: #c9ced6; }
+.tablet-garage[data-sub="exterior"] .g-layer {
+  bottom: calc(var(--gbar-h) + var(--gbar-gap) * 2);
+  border-radius: 0 0 1.6cqw 1.6cqw;
+  overflow: hidden;
+}
+.tablet-garage[data-sub="interior"] .only-exterior,
+.tablet-garage[data-sub="icm"] .only-exterior { display: none !important; }
+.tablet-garage:not([data-sub="interior"]) .only-interior { display: none !important; }
+.tablet-garage:not([data-sub="icm"]) .only-icm { display: none !important; }
+
+/* --- Bancada de testes do ICM (painel fora do jogo) --- */
+#icmBenchView.show {
+  display: flex;
+  flex-direction: column;
+  gap: max(1.2cqh, 3px);
+  padding: max(13cqh, calc(4cqh + 34px)) 3cqw max(2cqh, 4px);
+  background: radial-gradient(ellipse at 50% 30%, #1b2030 0%, #0b0d12 70%);
+  overflow-y: auto;
+}
+.bench-head {
+  position: absolute;
+  top: 4cqh;
+  left: 30cqw;
+  right: 30cqw;
+  text-align: center;
+  color: #ffd34d;
+  font-family: 'Press Start 2P', 'Pixelify Sans', monospace;
+  font-size: max(1.25cqw, 6px);
+  line-height: 1.5;
+}
+.bench-head small {
+  display: block;
+  font-family: 'Pixelify Sans', sans-serif;
+  color: #94a3b8;
+  font-size: max(1.15cqw, 7px);
+}
+.bench-screen {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 354 / 112;
+  max-height: 52cqh;
+  align-self: center;
+  flex: none;
+  background: #000;
+  border: max(0.25cqw, 2px) solid #ffbb00;
+  box-shadow: 0 0 0 max(0.2cqw, 1px) #1c0326;
+  overflow: hidden;
+}
+.bench-screen canvas { position: absolute; left: 0; top: 0; image-rendering: pixelated; }
+.bench-status {
+  font-family: 'Pixelify Sans', monospace;
+  font-size: max(1.15cqw, 7px);
+  color: #cbd5e1;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bench-status b { color: #3ddc4a; font-weight: 600; }
+.bench-status .warn { color: #ff6b6b; }
+.bench-keys {
+  text-align: center;
+  font-family: 'Pixelify Sans', monospace;
+  font-size: max(1.1cqw, 7px);
+  color: #ffd34d;
+}
+.bench-mode { margin-left: 1cqw; padding: 0 0.6cqw; color: #94a3b8; border: 1px solid #475569; }
+.bench-mode.drive { color: #1c0326; background: #3ddc4a; border-color: #3ddc4a; }
+body.real-mode .bench-keys { font-family: 'Montserrat', sans-serif; font-weight: 700; }
+body.real-mode .bench-screen { border-radius: 10px; border-color: #3a3d44; }
+.bench-controls { display: flex; flex-direction: column; gap: max(1cqh, 3px); }
+.bench-sliders { display: grid; grid-template-columns: repeat(4, 1fr); gap: max(1.4cqw, 4px); }
+.bench-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: 'Pixelify Sans', sans-serif;
+  font-size: max(1.1cqw, 7px);
+  color: #e2e8f0;
+}
+.bench-slider b { color: #ffd34d; font-weight: 600; }
+.bench-slider input { width: 100%; accent-color: #ffbb00; margin: 0; height: max(1.6cqw, 12px); }
+.bench-toggles { display: flex; flex-wrap: wrap; justify-content: center; gap: max(0.7cqw, 3px); }
+.bench-tog {
+  font-family: 'Pixelify Sans', sans-serif;
+  font-size: max(1.05cqw, 7px);
+  padding: max(0.5cqw, 3px) max(0.9cqw, 5px);
+  background: #1e2433;
+  color: #cbd5e1;
+  border: max(0.18cqw, 1px) solid #475569;
+  cursor: pointer;
+}
+.bench-tog:hover { border-color: #ffbb00; }
+.bench-tog.on { background: #ffbb00; color: #1c0326; border-color: #1c0326; }
+body.real-mode .bench-tog { border-radius: 6px; font-family: 'Montserrat', sans-serif; font-weight: 700; }
+body.real-mode .bench-slider, body.real-mode .bench-status { font-family: 'Montserrat', sans-serif; }
+
+.garage-bar {
+  position: absolute;
+  left: 2cqw;
+  right: 2cqw;
+  bottom: var(--gbar-gap);
+  height: var(--gbar-h);
+  z-index: 15;
+  background: #ffffff;
+  border-radius: 1.6cqw;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 clamp(4px, 8cqw, 96px);
+  gap: 1cqw;
+}
+
+.selector-car-title {
+  font-family: 'Pixelify Sans', sans-serif;
+  font-size: max(2.6cqw, 11px);
+  font-weight: 600;
+  color: #111827;
+  text-align: center;
+  line-height: 1.15;
+  letter-spacing: 0.5px;
+}
+
+.g-arrow-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 1cqw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #111827;
+  transition: transform 0.1s ease;
+}
+.g-arrow-btn svg { width: max(4.4cqw, 20px); height: max(4.4cqw, 20px); display: block; }
+.g-arrow-btn:hover { transform: scale(1.18); }
+.g-arrow-btn:active { transform: scale(0.92); }
+.g-arrow-btn:focus-visible { outline: 2px solid #111827; outline-offset: 2px; border-radius: 6px; }
+
+/* --- Escolha do carro (antes do modo de jogo) --- */
+
+#viewMenuCar { gap: 2.2cqh; }
+.car-pick {
+  position: relative;
+  width: max(46cqw, 150px);
+  display: flex;
+  flex-direction: column;
+  gap: 1.4cqh;
+}
+.car-pick-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 547 / 281;
+  background: #070b12;
+  border: max(0.3cqw, 2px) solid var(--gold);
+  box-shadow:
+    0 0 0 max(0.2cqw, 2px) #1c0326,
+    max(0.45cqw, 3px) max(0.45cqw, 3px) 0 max(0.2cqw, 2px) rgba(28, 3, 38, 0.85);
+  overflow: hidden;
+}
+.car-pick-stage img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.car-pick-pixel { position: absolute; inset: 0; }
+.car-pick-real { position: absolute; inset: 0; display: none; }
+.car-pick-stage .drag-hint { top: 5%; bottom: auto; font-size: max(1cqw, 7px); }
+#viewMenuGarage .drag-hint { top: 4cqh; bottom: auto; }
+/* depois do primeiro arrasto a dica some */
+.spin360.used .drag-hint { opacity: 0; transition: opacity 0.6s; }
+.car-pick-tag { top: 0; z-index: 8; }
+.car-pick-bar {
+  background: #ffffff;
+  border-radius: 1.2cqw;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.3cqw 0.6cqw;
+  min-height: max(5.6cqw, 24px);
+}
+.car-pick-name {
+  font-family: 'Pixelify Sans', sans-serif;
+  font-size: max(1.9cqw, 10px);
+  font-weight: 600;
+  color: #111827;
+  text-align: center;
+  line-height: 1.1;
+}
+.car-pick .g-arrow-btn svg { width: max(3.2cqw, 16px); height: max(3.2cqw, 16px); }
+.car-pick-actions { display: flex; gap: 1.6cqw; justify-content: center; }
+.car-pick-actions .pixel-btn-content { width: max(19cqw, 80px); }
+
+/* --- Canvas do jogo --- */
+
+.game-canvas-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  background: #000;
+  overflow: hidden;
+}
+.game-canvas-overlay.active { display: block; }
+/* o jogo.js desenha em resolução baixa e define o tamanho do canvas em px
+   (sempre múltiplo inteiro), aqui só garantimos que não suaviza */
+.game-canvas-overlay canvas {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  touch-action: none;
+}
+
+/* --- Rodapé com o campus e as autoras --- */
+
+.credits-fold {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2750 / 1536;
+  overflow: hidden;
+  background: var(--sky);
+}
+
+.credits-bg-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center bottom;
+  /* o céu da foto é de outro tom de azul; a máscara vai sumindo com o topo
+     da imagem pra ela se misturar com o fundo da página */
+  -webkit-mask-image: linear-gradient(180deg,
+    rgba(0,0,0,0) 0%, rgba(0,0,0,0.06) 6%, rgba(0,0,0,0.18) 12%,
+    rgba(0,0,0,0.36) 18%, rgba(0,0,0,0.58) 24%, rgba(0,0,0,0.78) 30%,
+    rgba(0,0,0,0.93) 35%, #000 40%);
+          mask-image: linear-gradient(180deg,
+    rgba(0,0,0,0) 0%, rgba(0,0,0,0.06) 6%, rgba(0,0,0,0.18) 12%,
+    rgba(0,0,0,0.36) 18%, rgba(0,0,0,0.58) 24%, rgba(0,0,0,0.78) 30%,
+    rgba(0,0,0,0.93) 35%, #000 40%);
+}
+
+.avatar {
+  position: absolute;
+  bottom: 0;
+  width: 21%;
+  height: auto;
+  z-index: 3;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.25));
+}
+.avatar-amanda { left: 45%; }
+.avatar-magda  { left: 64%; }
+/* as fotos reais são recortadas mais justas, então ficam mais estreitas
+   pra ter a mesma altura e o mesmo centro das versões pixel */
+.avatar-amanda.avatar-real { left: 48%; width: 15%; }
+.avatar-magda.avatar-real  { left: 66.6%; width: 15.7%; }
+.avatar-real { display: none; }
+
+.avatar-name {
+  position: absolute;
+  bottom: 2.2%;
+  z-index: 4;
+  font-family: 'Pixelify Sans', monospace;
+  font-weight: 600;
+  font-size: clamp(14px, 2.5vw, 38px);
+  color: #ffffff;
+  text-shadow: 2px 2px 0 #1e293b, -1px -1px 0 #1e293b, 1px -1px 0 #1e293b, -1px 1px 0 #1e293b;
+  letter-spacing: 1px;
+}
+.name-amanda { right: 56%; }
+.name-magda  { right: 2.5%; }
+
+/* =========================================================
+   Modo foto real (body.real-mode)
+   ========================================================= */
+
+body.real-mode { font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
+/* troca de imagens */
+body.real-mode .icon-pixel,
+body.real-mode .frame-pixel,
+body.real-mode .bg-pixel,
+body.real-mode .avatar-pixel,
+body.real-mode .car-pick-pixel { display: none; }
+body.real-mode .icon-emoji { display: inline; }
+body.real-mode .frame-real,
+body.real-mode .bg-real,
+body.real-mode .avatar-real,
+body.real-mode .car-pick-real { display: block; }
+
+/* moldura do tablet real (imagem de 435x299, tela em x 9..426 e y 15..280) */
+body.real-mode .tablet-frame {
+  --scr-left: 2.0%;
+  --scr-top: 4.9%;
+  --scr-w: 96.0%;
+  --scr-h: 88.9%;
+  --scr-radius: 6px;
+}
+
+body.real-mode .top-bar-title,
+body.real-mode .avatar-name {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+/* botões: some o desenho pixel e aparece o botão dourado */
+body.real-mode .btn-pixel-asset,
+body.real-mode .btn-pixel-label { display: none !important; }
+body.real-mode .pixel-btn > .pixel-btn-content { display: none; }
+
+body.real-mode .btn-real-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: max(22cqw, 84px);
+  height: max(7.2cqw, 28px);
+  background: linear-gradient(180deg, #ffcf33 0%, var(--gold) 48%, #cc9600 100%);
+  border: 1.5px solid rgba(255, 243, 191, 0.75);
+  border-radius: 1.6cqw;
+  color: var(--ink);
+  font-family: 'Montserrat', sans-serif;
+  font-size: max(1.9cqw, 10px);
+  font-weight: 800;
+  letter-spacing: min(2px, 0.25cqw);   /* encolhe no celular pra caber "CLASSIFICAÇÃO" */
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.5) inset,
+    0 -3px 0 rgba(153, 112, 0, 0.6) inset,
+    0 10px 24px -4px rgba(255, 187, 0, 0.55),
+    0 4px 12px rgba(0, 0, 0, 0.4);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.12s ease;
+}
+/* brilho na metade de cima */
+body.real-mode .btn-real-text::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 48%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.05) 100%);
+  pointer-events: none;
+}
+body.real-mode .pixel-btn:hover .btn-real-text { transform: translateY(-2px); filter: brightness(1.08); }
+body.real-mode .ranking-panel-footer .btn-real-text { width: max(17cqw, 72px); height: max(6cqw, 24px); font-size: max(1.6cqw, 9px); }
+body.real-mode .g-corner .btn-real-text { width: max(17cqw, 84px); height: max(6.2cqw, 24px); font-size: max(1.6cqw, 9px); letter-spacing: max(0.12cqw, 0.5px); }
+body.real-mode .car-pick-actions .btn-real-text { width: max(19cqw, 80px); }
+
+/* campos */
+body.real-mode .pixel-input-box {
+  aspect-ratio: auto;
+  height: max(7.2cqw, 28px);
+  background: rgba(15, 23, 42, 0.88);
+  border: 2px solid var(--gold);
+  border-radius: 1.6cqw;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), 0 0 12px rgba(255, 187, 0, 0.3);
+  backdrop-filter: blur(8px);
+}
+body.real-mode .pixel-input-box:focus-within { border-color: #facc15; box-shadow: 0 0 18px rgba(250, 204, 21, 0.5); }
+body.real-mode .pixel-input-text {
+  font-family: 'Montserrat', sans-serif;
+  font-size: max(1.9cqw, 10px);
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 1.5px;
+}
+body.real-mode .pixel-input-text::placeholder { color: #94a3b8; }
+body.real-mode .field-tag {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  font-size: max(1.15cqw, 8px);
+  letter-spacing: 1px;
+  color: #0f172a;
+  background: var(--gold);
+  border-radius: 999px;
+  padding: max(0.35cqw, 2px) max(1cqw, 6px);
+}
+body.real-mode .field-pencil { shape-rendering: auto; animation: none; }
+
+/* ranking */
+body.real-mode .utfpr-ranking-panel {
+  font-family: 'Montserrat', sans-serif;
+  background: rgba(15, 23, 42, 0.96);
+  border: 2px solid #facc15;
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85);
+}
+body.real-mode .ranking-panel-title { font-family: 'Montserrat', sans-serif; font-size: max(2cqw, 9px); font-weight: 800; letter-spacing: 1.5px; border-bottom: 1px solid rgba(250, 204, 21, 0.4); }
+body.real-mode .rank-tab-btn { font-family: 'Montserrat', sans-serif; font-size: max(1.4cqw, 8px); font-weight: 700; border-radius: 6px; }
+body.real-mode .ranking-panel-table { border-radius: 8px; border-color: #1e293b; }
+body.real-mode .rank-p-row { font-family: 'Montserrat', sans-serif; font-size: max(1.7cqw, 9px); font-weight: 600; }
+body.real-mode .rank-empty { font-family: 'Montserrat', sans-serif; font-weight: 600; }
+
+/* garagem e escolha do carro */
+body.real-mode .tablet-garage[data-sub="exterior"] { background: #1e293b; }
+body.real-mode .garage-bar { border-radius: 2cqw; background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(8px); }
+body.real-mode .selector-car-title { font-family: 'Montserrat', sans-serif; font-size: max(2.2cqw, 10px); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+body.real-mode .car-pick-stage { border-radius: 1.4cqw; border-width: 2px; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45); }
+body.real-mode .car-pick-name { font-family: 'Montserrat', sans-serif; font-weight: 800; text-transform: uppercase; font-size: max(1.6cqw, 9px); }
+
+/* --- Celular --- */
+
+@media (max-width: 600px) {
+  .top-bar-title { font-size: 10.5px; }
+}
+
+/* dica de arrastar no modo pixel: letra pixel e cantos retos */
+body:not(.real-mode) .drag-hint { font-family: 'Pixelify Sans', sans-serif; border-radius: 0; background: rgba(28, 3, 38, 0.7); }
+
+/* tablet pequeno (celular): título da bancada sem a linha de baixo */
+@container (max-width: 560px) {
+  .bench-head small { display: none; }
+}
+
+/* botão mais comprido do menu (CLASSIFICAÇÃO) em telas pequenas */
+@container (max-width: 420px) {
+  body.real-mode .utfpr-menu-center .btn-real-text { font-size: 9px; width: max(22cqw, 96px); }
+}
+
+/* --- Nuvens atrás do tablet (web/img/interface/nuvens, recortadas do nuvens.jpg) --- */
+.sky-clouds { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.tablet-stage > .tablet-frame { z-index: 1; }
+.sky-cloud {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: var(--w);
+  min-width: 50px;
+  height: auto;
+  opacity: 0.95;
+  animation: cloud-drift var(--dur) ease-in-out var(--d) infinite alternate;
+}
+/* no modo real as mesmas nuvens ficam um pouco mais suaves */
+/* pixel no modo pixel, nuvens da foto do campus no modo real */
+.sky-cloud-real { display: none; image-rendering: auto; opacity: 0.95; }
+body.real-mode .sky-cloud-pixel { display: none; }
+body.real-mode .sky-cloud-real { display: block; }
+@keyframes cloud-drift { from { transform: translateX(-4vw); } to { transform: translateX(4vw); } }
+@media (prefers-reduced-motion: reduce) { .sky-cloud { animation: none; } }
+
+/* --- Abas da bancada: TAREFAS OSEK · SINAL CAN · VERIFICAÇÕES --- */
+.bench-tabs { display: flex; justify-content: center; gap: max(0.5cqw, 2px); flex: none; }
+.bench-tab, .bench-zoom {
+  font-family: 'Pixelify Sans', monospace; font-size: max(1.15cqw, 7px);
+  padding: max(0.4cqh, 2px) max(1.2cqw, 6px); cursor: pointer;
+  background: #141a26; color: #cbd5e1; border: max(0.18cqw, 1px) solid #475569;
+}
+.bench-tab:hover, .bench-zoom:hover { border-color: #ffbb00; }
+.bench-tab.on, .bench-zoom.on { background: #ffbb00; color: #1c0326; border-color: #1c0326; }
+body.real-mode .bench-tab, body.real-mode .bench-zoom { border-radius: 6px; font-family: 'Montserrat', sans-serif; font-weight: 700; }
+.bench-panel[hidden] { display: none !important; }
+.bench-panel { font-family: 'Pixelify Sans', monospace; font-size: max(1.05cqw, 7px); color: #cbd5e1; }
+body.real-mode .bench-panel { font-family: 'Montserrat', sans-serif; }
+.bench-tl-head { display: flex; justify-content: space-between; align-items: center; color: #ffd34d; margin-bottom: 2px; }
+.bench-tl-zoom { display: flex; gap: 2px; }
+#benchTimeline { width: 100%; display: block; border: 1px solid #334155; }
+.bench-tl-legend { color: #94a3b8; margin: 2px 0 max(0.8cqh, 3px); font-size: max(0.95cqw, 6px); }
+.bench-table-wrap { overflow-x: auto; }
+.bench-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.bench-table th { color: #ffd34d; text-align: left; font-weight: 600; border-bottom: 1px solid #475569; padding: 1px 4px; white-space: nowrap; }
+.bench-table td { padding: 1px 4px; border-bottom: 1px solid #1e293b; white-space: nowrap; }
+.bench-table .ok { color: #3ddc4a; } .bench-table .warn { color: #ff6b6b; }
+.st { padding: 0 4px; border: 1px solid #475569; color: #94a3b8; }
+.st-running { background: #3ddc4a; color: #08200b; border-color: #3ddc4a; }
+.st-ready { background: #ffd43b; color: #1c1300; border-color: #ffd43b; }
+.st-waiting { color: #ffa94d; border-color: #ffa94d; }
+.can-row { display: flex; align-items: stretch; gap: max(0.4cqw, 2px); margin-top: max(1cqh, 4px); }
+.can-row > i { align-self: center; color: #ffbb00; font-style: normal; }
+.can-step { flex: 1; min-width: 0; background: #101624; border: 1px solid #334155; padding: max(0.5cqh, 2px) max(0.6cqw, 3px); display: flex; flex-direction: column; gap: 1px; }
+.can-step b { color: #ffd34d; font-weight: 600; }
+.can-step small { color: #94a3b8; font-family: monospace; }
+.can-step.ok { border-color: #3ddc4a; } .can-step.bad { border-color: #ff6b6b; color: #ff6b6b; }
+.can-fresh { margin-top: 3px; } .can-fresh .warn { color: #ff6b6b; }
+.can-fresh .bar { height: max(0.7cqh, 4px); background: #1e293b; margin-top: 2px; }
+.can-fresh .bar div { height: 100%; transition: width 0.2s linear; }
+.bench-chk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: max(1.2cqw, 6px); }
+.bench-chk-grid h4 { margin: 0 0 3px; color: #ffd34d; font-weight: 600; font-size: inherit; }
+.bench-chk { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.bench-chk li { display: grid; grid-template-columns: max(1.4cqw, 10px) 1fr; column-gap: 4px; background: #101624; border-left: 3px solid #475569; padding: 1px 4px; }
+.bench-chk li small { grid-column: 2; color: #94a3b8; }
+.bench-chk li.ok { border-left-color: #3ddc4a; } .bench-chk li.ok b { color: #3ddc4a; }
+.bench-chk li.bad { border-left-color: #ff6b6b; } .bench-chk li.bad b { color: #ff6b6b; }
+.bench-chk li.wait b { color: #ffd43b; }
+.bench-chk li.meta { border-left: none; background: none; }
+@container (max-width: 560px) {
+  .bench-chk-grid { grid-template-columns: 1fr; }
+  .can-row { flex-wrap: wrap; } .can-row > i { display: none; } .can-step { flex: 1 1 40%; }
+}

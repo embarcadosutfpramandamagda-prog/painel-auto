@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Painel Automotivo com Trampoline e Controle em Tempo Real | UTFPR</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700&family=Pixelify+Sans:wght@400;500;600;700&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+  <style>
+    /* =========================================================
+       VARIÁVEIS DO LAYOUT
+       ========================================================= */
+    :root {
+      --sky: #64C1FA;            /* mesmo azul do céu da imagem inicial */
+      --gold: #FFBB00;
+      --ink: #1c0326;
+      --bar-h: clamp(44px, 5.2vw, 64px);
+      --bar-fade: clamp(18px, 2.4vw, 32px);
+      --emoji-font: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+    }
+
+    /* =========================================================
+       RESET & ANTI-SELEÇÃO
+       ========================================================= */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-user-select: none !important;
+      user-select: none !important;
+      -webkit-touch-callout: none !important;
+      -webkit-tap-highlight-color: transparent !important;
+    }
+    input, textarea {
+      -webkit-user-select: text !important;
+      user-select: text !important;
+    }
+    html { scroll-behavior: smooth; background: var(--sky); }
+    ::selection { background: transparent !important; color: inherit !important; }
+
+    body {
+      background-color: var(--sky);
+      color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    img {
+      -webkit-user-drag: none !important;
+      pointer-events: none !important;
+      display: block;
+    }
+
+    .pixelated {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    /* =========================================================
+       1. TOP BAR / CABEÇALHO SUPERIOR (FIXO)
+       ========================================================= */
+    .top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--bar-h);
+      z-index: 1000;
+      background: transparent;
+      /* 3 colunas: [espaço = largura dos ícones] [título] [ícones]
+         as laterais têm a mesma largura, então o título fica no centro exato da página */
+      display: grid;
+      grid-template-columns: var(--icons-w) minmax(0, 1fr) var(--icons-w);
+      align-items: center;
+      column-gap: clamp(8px, 1.2vw, 16px);
+      padding: 0 clamp(12px, 3vw, 40px);
+      --icon-size: clamp(26px, 3.2vw, 42px);
+      --icon-gap: clamp(6px, 0.9vw, 12px);
+      --icons-w: calc(var(--icon-size) * 2 + var(--icon-gap));
+    }
+
+    /* Fundo da barra em degradê: azul sólido no topo que se dissolve na página.
+       Vai um pouco além da barra (--bar-fade) para não existir borda reta
+       quando o conteúdo rola por baixo; o blur acompanha a mesma máscara. */
+    .top-bar::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: calc(100% + var(--bar-fade));
+      z-index: -1;
+      pointer-events: none;
+      background: linear-gradient(180deg,
+        rgba(100, 193, 250, 1) 0%,
+        rgba(100, 193, 250, 0.97) 45%,
+        rgba(100, 193, 250, 0.8) 65%,
+        rgba(100, 193, 250, 0.45) 82%,
+        rgba(100, 193, 250, 0) 100%);
+      -webkit-backdrop-filter: blur(6px);
+              backdrop-filter: blur(6px);
+      -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 55%, rgba(0,0,0,0.6) 78%, rgba(0,0,0,0) 100%);
+              mask-image: linear-gradient(180deg, #000 0%, #000 55%, rgba(0,0,0,0.6) 78%, rgba(0,0,0,0) 100%);
+    }
+
+    .top-bar-title {
+      font-family: 'Pixelify Sans', monospace;
+      font-weight: 600;
+      font-size: clamp(11px, 1.7vw, 22px);
+      letter-spacing: 0.5px;
+      color: #ffffff;
+      line-height: 1.15;
+      text-shadow: 2px 2px 0 rgba(15, 50, 90, 0.35);
+      grid-column: 2;
+      min-width: 0;
+      text-align: center;
+      text-wrap: balance;
+    }
+
+    .top-bar-icons {
+      grid-column: 3;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: var(--icon-gap);
+    }
+
+    .mode-emoji-btn {
+      background: transparent;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      padding: 0;
+      font-family: var(--emoji-font);
+      font-size: calc(var(--icon-size) * 0.86);
+      line-height: 1;
+      width: var(--icon-size);
+      height: var(--icon-size);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.25));
+      transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .mode-emoji-btn:hover { transform: scale(1.15) rotate(-4deg); }
+    .mode-emoji-btn:active { transform: scale(0.92); }
+    /* 💻 vira o laptop pixel no modo pixel e o emoji Apple no modo real */
+    .laptop-pixel-icon { height: 100%; width: auto; }
+    .laptop-emoji { display: none; }
+    body.real-mode .laptop-pixel-icon { display: none; }
+    body.real-mode .laptop-emoji { display: inline; }
+    .globe-pixel-icon { height: 100%; width: auto; }
+    .globe-emoji { display: none; }
+    body.real-mode .globe-pixel-icon { display: none; }
+    body.real-mode .globe-emoji { display: inline; }
+
+    .mode-emoji-btn:focus-visible { outline: 2px solid #ffffff; outline-offset: 4px; border-radius: 6px; }
+
+    /* =========================================================
+       2. VIEWPORT CENTRAL / FRAME PRINCIPAL (TABLET)
+       ========================================================= */
+    .tablet-stage {
+      width: 100%;
+      padding: calc(var(--bar-h) + clamp(6px, 1.2vw, 16px)) 0 clamp(18px, 3vw, 40px);
+      display: flex;
+      justify-content: center;
+      background: var(--sky);
+    }
+
+    .tablet-frame {
+      position: relative;
+      width: min(94vw, 1180px, calc((100vh - var(--bar-h) - 56px) * 1.55));
+      /* Área da tela dentro do frame pixel (medido em px: 527x338, tela 27..500 x 33..314) */
+      --scr-left: 5.0%;
+      --scr-top: 9.6%;
+      --scr-w: 90.0%;
+      --scr-h: 83.4%;
+      --scr-radius: 0px;
+    }
+    body.real-mode .tablet-frame {
+      /* Tablet real (435x299, tela 9..426 x 15..280) */
+      --scr-left: 2.0%;
+      --scr-top: 4.9%;
+      --scr-w: 96.0%;
+      --scr-h: 88.9%;
+      --scr-radius: 6px;
+    }
+
+    .tablet-frame-img {
+      width: 100%;
+      height: auto;
+      position: relative;
+      z-index: 1;
+      filter: drop-shadow(0 10px 22px rgba(10, 40, 80, 0.28));
+    }
+    .frame-real { display: none; }
+    body.real-mode .frame-pixel { display: none; }
+    body.real-mode .frame-real { display: block; }
+
+    .tablet-screen {
+      position: absolute;
+      left: var(--scr-left);
+      top: var(--scr-top);
+      width: var(--scr-w);
+      height: var(--scr-h);
+      z-index: 2;
+      overflow: hidden;
+      border-radius: var(--scr-radius);
+      background: var(--sky);
+      container-type: size;
+    }
+
+    .screen-bg-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center center;
+    }
+    .bg-real { display: none; }
+    body.real-mode .bg-pixel { display: none; }
+    body.real-mode .bg-real { display: block; }
+
+    /* Menu central sobre a pista */
+    .utfpr-menu-center {
+      position: absolute;
+      left: 52%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .utfpr-screen-view {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.6cqh;
+    }
+    .utfpr-screen-view.active { display: flex; }
+
+    /* Botões em Pixel Art (escalam com a tela do tablet) */
+    .pixel-btn {
+      background: transparent;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      display: block;
+      line-height: 0;
+      outline: none;
+      transition: transform 0.08s ease, filter 0.08s ease;
+    }
+    .pixel-btn:hover {
+      transform: scale(1.05);
+      filter: brightness(1.12) drop-shadow(0 0 14px rgba(255, 187, 0, 0.75));
+    }
+    .pixel-btn:active { transform: scale(0.96); }
+    .pixel-btn:focus-visible { filter: brightness(1.12) drop-shadow(0 0 10px #ffffff); }
+
+    .pixel-btn-content {
+      position: relative;
+      width: max(22cqw, 84px);
+      aspect-ratio: 216 / 72;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .pixel-btn-content img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .btn-pixel-label {
+      position: relative;
+      z-index: 2;
+      font-family: 'Press Start 2P', monospace;
+      font-size: max(1.75cqw, 7px);
+      color: var(--ink);
+      letter-spacing: 0.5px;
+      transform: translate(-3%, -6%);
+      white-space: nowrap;
+    }
+
+    /* Campos NOME / IDADE — precisam parecer CAMPO, não botão:
+       caixa escura com borda dourada, etiqueta tipo "legenda" na borda e lápis */
+    #viewMenuPilot { gap: 2.6cqh; }
+
+    .pilot-field {
+      position: relative;
+      display: block;
+      cursor: text;
+    }
+
+    .field-tag {
+      position: absolute;
+      top: 0;
+      left: 9%;
+      transform: translateY(-58%);
+      z-index: 6;
+      font-family: 'Press Start 2P', monospace;
+      font-size: max(1.05cqw, 6px);
+      line-height: 1;
+      color: var(--gold);
+      background: #1c0326;
+      padding: max(0.45cqw, 2px) max(0.7cqw, 3px);
+      letter-spacing: 0.5px;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .pixel-input-box {
+      position: relative;
+      width: max(22cqw, 84px);
+      aspect-ratio: 216 / 72;
+      display: flex;
+      align-items: center;
+      background: #120a24;
+      border: max(0.3cqw, 2px) solid var(--gold);
+      box-shadow:
+        0 0 0 max(0.2cqw, 2px) #1c0326,
+        max(0.45cqw, 3px) max(0.45cqw, 3px) 0 max(0.2cqw, 2px) rgba(28, 3, 38, 0.85),
+        inset 0 max(0.3cqw, 2px) 0 rgba(0, 0, 0, 0.45);
+      transition: transform 0.08s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+    }
+    .pilot-field:hover .pixel-input-box { transform: translateY(-1px); border-color: #ffd34d; }
+    .pixel-input-box:focus-within {
+      border-color: #fff2b3;
+      box-shadow:
+        0 0 0 max(0.2cqw, 2px) #1c0326,
+        max(0.45cqw, 3px) max(0.45cqw, 3px) 0 max(0.2cqw, 2px) rgba(28, 3, 38, 0.85),
+        0 0 max(1.4cqw, 8px) rgba(255, 187, 0, 0.85);
+    }
+
+    .pixel-input-text {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-family: 'Press Start 2P', monospace;
+      font-size: max(1.7cqw, 7px);
+      color: #ffffff;
+      caret-color: var(--gold);
+      text-align: center;
+      text-transform: uppercase;
+      padding: 0 max(3.2cqw, 16px) 0 max(1cqw, 5px);
+      letter-spacing: 0.5px;
+    }
+    .pixel-input-text::-webkit-inner-spin-button,
+    .pixel-input-text::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .pixel-input-text[type=number] { -moz-appearance: textfield; appearance: textfield; }
+    .pixel-input-text::placeholder { color: #8b7fa8; opacity: 1; }
+
+    /* Lápis pixel: indica que dá para editar */
+    .field-pencil {
+      position: absolute;
+      right: max(1cqw, 5px);
+      top: 50%;
+      transform: translateY(-50%);
+      width: max(1.9cqw, 10px);
+      height: max(1.9cqw, 10px);
+      pointer-events: none;
+      shape-rendering: crispEdges;
+      animation: pencil-bob 1.6s steps(2, end) infinite;
+    }
+    .pixel-input-box:focus-within .field-pencil { animation: none; opacity: 0.45; }
+    @keyframes pencil-bob {
+      0%, 100% { transform: translateY(-50%); }
+      50% { transform: translateY(-62%); }
+    }
+    @media (prefers-reduced-motion: reduce) { .field-pencil { animation: none; } }
+
+    /* Painel do Ranking (dentro do tablet) */
+    .utfpr-ranking-panel {
+      width: max(74cqw, min(92cqw, 260px));
+      max-height: 94cqh;
+      overflow: hidden;
+      background: rgba(14, 18, 30, 0.96);
+      border: 3px solid var(--gold);
+      box-shadow: 0 0 0 3px #000000, 0 12px 32px rgba(0, 0, 0, 0.85);
+      padding: 2cqw;
+      display: flex;
+      flex-direction: column;
+      gap: 1.6cqh;
+      border-radius: 4px;
+      font-family: 'Press Start 2P', monospace;
+    }
+    .ranking-panel-title {
+      font-size: max(1.6cqw, 7px);
+      color: #facc15;
+      text-align: center;
+      border-bottom: 2px dashed var(--gold);
+      padding-bottom: 1.2cqh;
+    }
+    .ranking-panel-filters {
+      display: flex;
+      justify-content: center;
+      gap: 0.8cqw;
+      flex-wrap: wrap;
+    }
+    .rank-tab-btn {
+      background: #020617;
+      border: 1px solid #64748b;
+      color: #cbd5e1;
+      font-family: 'Press Start 2P', monospace;
+      font-size: max(1.15cqw, 6px);
+      padding: max(0.9cqw, 3px) max(1.2cqw, 4px);
+      cursor: pointer;
+      border-radius: 2px;
+    }
+    .rank-tab-btn.active { background: var(--gold); color: #000000; border-color: #ffffff; }
+    .ranking-panel-table {
+      background: #040814;
+      border: 1px solid #334155;
+      padding: 1cqw;
+      max-height: max(44cqh, 60px);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5cqh;
+    }
+    .rank-p-row {
+      display: grid;
+      grid-template-columns: 7cqw 1.4fr 1fr 1fr 8cqw;
+      align-items: center;
+      gap: 0.8cqw;
+      font-family: 'VT323', monospace;
+      font-size: max(2.5cqw, 11px);
+      color: #e2e8f0;
+      padding: 0.2cqh 0.6cqw;
+      border-bottom: 1px dashed #1e293b;
+    }
+    .rank-p-row.gold { color: #facc15; background: rgba(250, 204, 21, 0.08); }
+    .rank-empty {
+      padding: 4cqh 1cqw;
+      text-align: center;
+      color: #94a3b8;
+      font-size: max(1.5cqw, 7px);
+      line-height: 1.7;
+    }
+    .rank-empty span { color: var(--gold); font-size: max(1.2cqw, 6px); }
+    .ranking-panel-footer { display: flex; justify-content: center; }
+    .ranking-panel-footer .pixel-btn-content { width: max(17cqw, 72px); }
+
+    /* =========================================================
+       GARAGEM (DENTRO DO TABLET)
+       Exterior: VOLTAR ↖  PAINEL ↗  + barra branca com ← carro →
+       Painel (interior): VOLTAR ↖
+       ========================================================= */
+    .tablet-garage {
+      --gbar-h: max(15.8cqh, 34px);
+      --gbar-gap: max(2.6cqh, 5px);
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      display: none;
+      background: #070b12;
+    }
+    .tablet-garage.active { display: block; }
+
+    .g-layer {
+      position: absolute;
+      inset: 0;
+      display: none;
+    }
+    .g-layer.show { display: block; }
+
+    .g-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center center;
+    }
+
+    .garage-real-container { cursor: grab; touch-action: pan-y; }
+    .garage-real-container.is-dragging { cursor: grabbing; }
+    .garage-car-layer { z-index: 2; }
+
+    .brand-logo-badge {
+      position: absolute;
+      bottom: 22cqh;
+      right: 3cqw;
+      width: 13cqw;
+      height: auto;
+      z-index: 5;
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
+    }
+
+    .drag-hint {
+      position: absolute;
+      left: 50%;
+      bottom: 22cqh;
+      transform: translateX(-50%);
+      z-index: 5;
+      font-family: 'Montserrat', sans-serif;
+      font-size: max(1.3cqw, 8px);
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: rgba(255, 255, 255, 0.9);
+      background: rgba(0, 0, 0, 0.45);
+      padding: 0.6cqw 1.4cqw;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    /* Botões nos cantos superiores */
+    .g-corner {
+      position: absolute;
+      top: 4cqh;
+      z-index: 15;
+    }
+    .g-corner-left { left: 3.5cqw; }
+    .g-corner-right { right: 3.5cqw; }
+    .g-corner .pixel-btn-content { width: max(19cqw, 84px); }
+    .g-corner .btn-pixel-label { font-size: max(1.6cqw, 7px); }
+    body.real-mode .g-corner .btn-real-text { width: max(17cqw, 84px); height: max(6.2cqw, 24px); font-size: max(1.6cqw, 9px); letter-spacing: max(0.12cqw, 0.5px); }
+
+    /* Na garagem a imagem termina acima da barra branca (cantos de baixo arredondados) */
+    .tablet-garage[data-sub="exterior"] { background: #c9ced6; }
+    .tablet-garage[data-sub="exterior"] .g-layer {
+      bottom: calc(var(--gbar-h) + var(--gbar-gap) * 2);
+      border-radius: 0 0 1.6cqw 1.6cqw;
+      overflow: hidden;
+    }
+    .tablet-garage[data-sub="exterior"] .brand-logo-badge,
+    .tablet-garage[data-sub="exterior"] .drag-hint { bottom: 3cqh; }
+    body.real-mode .tablet-garage[data-sub="exterior"] { background: #1e293b; }
+
+    /* Só aparece o que pertence à sub-tela atual */
+    .tablet-garage[data-sub="exterior"] .only-interior,
+    .tablet-garage[data-sub="interior"] .only-exterior { display: none !important; }
+
+    /* Barra branca arredondada com seletor de carro */
+    .garage-bar {
+      position: absolute;
+      left: 2cqw;
+      right: 2cqw;
+      bottom: var(--gbar-gap);
+      height: var(--gbar-h);
+      z-index: 15;
+      background: #ffffff;
+      border-radius: 1.6cqw;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 clamp(4px, 8cqw, 96px);
+      gap: 1cqw;
+    }
+
+    .selector-car-title {
+      font-family: 'Pixelify Sans', sans-serif;
+      font-size: max(2.6cqw, 11px);
+      font-weight: 600;
+      color: #111827;
+      text-align: center;
+      line-height: 1.15;
+      letter-spacing: 0.5px;
+    }
+
+    .g-arrow-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 1cqw;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #111827;
+      transition: transform 0.1s ease;
+    }
+    .g-arrow-btn svg { width: max(4.4cqw, 20px); height: max(4.4cqw, 20px); display: block; }
+    .g-arrow-btn:hover { transform: scale(1.18); }
+    .g-arrow-btn:active { transform: scale(0.92); }
+    .g-arrow-btn:focus-visible { outline: 2px solid #111827; outline-offset: 2px; border-radius: 6px; }
+
+    /* Canvas do jogo (sobre a tela do tablet) */
+    .game-canvas-overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 50;
+      background: #000;
+    }
+    .game-canvas-overlay.active { display: block; }
+    .game-canvas-overlay { overflow: hidden; }
+    /* O motor desenha em baixa resolução e define width/height em px (ampliação inteira) */
+    .game-canvas-overlay canvas {
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      touch-action: none;
+    }
+
+    /* =========================================================
+       ESCOLHA DO CARRO (antes de escolher o modo de jogo)
+       ========================================================= */
+    #viewMenuCar { gap: 2.2cqh; }
+    .car-pick {
+      position: relative;
+      width: max(46cqw, 150px);
+      display: flex;
+      flex-direction: column;
+      gap: 1.4cqh;
+    }
+    .car-pick-stage {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 547 / 281;
+      background: #070b12;
+      border: max(0.3cqw, 2px) solid var(--gold);
+      box-shadow:
+        0 0 0 max(0.2cqw, 2px) #1c0326,
+        max(0.45cqw, 3px) max(0.45cqw, 3px) 0 max(0.2cqw, 2px) rgba(28, 3, 38, 0.85);
+      overflow: hidden;
+    }
+    .car-pick-stage img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .car-pick-real { position: absolute; inset: 0; display: none; }
+    body.real-mode .car-pick-pixel { display: none; }
+    body.real-mode .car-pick-real { display: block; }
+    body.real-mode .car-pick-stage { border-radius: 1.4cqw; border-width: 2px; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45); }
+    .car-pick-tag { top: 0; z-index: 8; }
+    .car-pick-bar {
+      background: #ffffff;
+      border-radius: 1.2cqw;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.3cqw 0.6cqw;
+      min-height: max(5.6cqw, 24px);
+    }
+    .car-pick-name {
+      font-family: 'Pixelify Sans', sans-serif;
+      font-size: max(1.9cqw, 10px);
+      font-weight: 600;
+      color: #111827;
+      text-align: center;
+      line-height: 1.1;
+    }
+    body.real-mode .car-pick-name { font-family: 'Montserrat', sans-serif; font-weight: 800; text-transform: uppercase; font-size: max(1.6cqw, 9px); }
+    .car-pick .g-arrow-btn svg { width: max(3.2cqw, 16px); height: max(3.2cqw, 16px); }
+    .car-pick-actions { display: flex; gap: 1.6cqw; justify-content: center; }
+    .car-pick-actions .pixel-btn-content { width: max(19cqw, 80px); }
+    body.real-mode .car-pick-actions .btn-real-text { width: max(19cqw, 80px); }
+
+    /* =========================================================
+       3. SEÇÃO INFERIOR / RODAPÉ E CRÉDITOS
+       ========================================================= */
+    .credits-fold {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 2750 / 1536;
+      overflow: hidden;
+      background: var(--sky);
+    }
+
+    .credits-bg-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center bottom;
+      /* O topo da imagem se dissolve no azul da página (sem faixa/emenda).
+         Curva suave: começa transparente e chega à imagem inteira em ~38% da altura. */
+      -webkit-mask-image: linear-gradient(180deg,
+        rgba(0,0,0,0) 0%, rgba(0,0,0,0.06) 6%, rgba(0,0,0,0.18) 12%,
+        rgba(0,0,0,0.36) 18%, rgba(0,0,0,0.58) 24%, rgba(0,0,0,0.78) 30%,
+        rgba(0,0,0,0.93) 35%, #000 40%);
+              mask-image: linear-gradient(180deg,
+        rgba(0,0,0,0) 0%, rgba(0,0,0,0.06) 6%, rgba(0,0,0,0.18) 12%,
+        rgba(0,0,0,0.36) 18%, rgba(0,0,0,0.58) 24%, rgba(0,0,0,0.78) 30%,
+        rgba(0,0,0,0.93) 35%, #000 40%);
+    }
+
+    .avatar {
+      position: absolute;
+      bottom: 0;
+      width: 21%;
+      height: auto;
+      z-index: 3;
+      filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.25));
+    }
+    .avatar-amanda { left: 45%; }
+    .avatar-magda  { left: 64%; }
+    /* Versões reais (recortadas, sem fundo): mesma altura e mesmo centro das pixel */
+    .avatar-amanda.avatar-real { left: 48%; width: 15%; }
+    .avatar-magda.avatar-real  { left: 66.6%; width: 15.7%; }
+    .avatar-real { display: none; }
+    body.real-mode .avatar-pixel { display: none; }
+    body.real-mode .avatar-real { display: block; }
+
+    .avatar-name {
+      position: absolute;
+      bottom: 2.2%;
+      z-index: 4;
+      font-family: 'Pixelify Sans', monospace;
+      font-weight: 600;
+      font-size: clamp(14px, 2.5vw, 38px);
+      color: #ffffff;
+      text-shadow: 2px 2px 0 #1e293b, -1px -1px 0 #1e293b, 1px -1px 0 #1e293b, -1px 1px 0 #1e293b;
+      letter-spacing: 1px;
+    }
+    .name-amanda { right: 56%; }
+    .name-magda  { right: 2.5%; }
+
+    /* =========================================================
+       MODO FOTO REAL
+       ========================================================= */
+    body.real-mode { font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
+    body.real-mode .top-bar-title,
+    body.real-mode .avatar-name {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .btn-real-text { display: none; }
+    body.real-mode .btn-pixel-asset,
+    body.real-mode .btn-pixel-label,
+    body.real-mode .arrow-pixel-asset { display: none !important; }
+    body.real-mode .arrow-real-asset { display: block; }
+    body.real-mode .pixel-btn > .pixel-btn-content { display: none; }
+
+    body.real-mode .btn-real-text {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: max(22cqw, 84px);
+      height: max(7.2cqw, 28px);
+      background: linear-gradient(180deg, #ffcf33 0%, var(--gold) 48%, #cc9600 100%);
+      border: 1.5px solid rgba(255, 243, 191, 0.75);
+      border-radius: 1.6cqw;
+      color: var(--ink);
+      font-family: 'Montserrat', sans-serif;
+      font-size: max(1.9cqw, 10px);
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      box-shadow:
+        0 2px 0 rgba(255, 255, 255, 0.5) inset,
+        0 -3px 0 rgba(153, 112, 0, 0.6) inset,
+        0 10px 24px -4px rgba(255, 187, 0, 0.55),
+        0 4px 12px rgba(0, 0, 0, 0.4);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.12s ease;
+    }
+    body.real-mode .btn-real-text::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 48%;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.05) 100%);
+      pointer-events: none;
+    }
+    body.real-mode .pixel-btn:hover .btn-real-text { transform: translateY(-2px); filter: brightness(1.08); }
+    body.real-mode .ranking-panel-footer .btn-real-text { width: max(17cqw, 72px); height: max(6cqw, 24px); font-size: max(1.6cqw, 9px); }
+
+    body.real-mode .pixel-input-box {
+      aspect-ratio: auto;
+      height: max(7.2cqw, 28px);
+      background: rgba(15, 23, 42, 0.88);
+      border: 2px solid var(--gold);
+      border-radius: 1.6cqw;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), 0 0 12px rgba(255, 187, 0, 0.3);
+      backdrop-filter: blur(8px);
+    }
+    body.real-mode .pixel-input-box:focus-within { border-color: #facc15; box-shadow: 0 0 18px rgba(250, 204, 21, 0.5); }
+    body.real-mode .pixel-input-text {
+      font-family: 'Montserrat', sans-serif;
+      font-size: max(1.9cqw, 10px);
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 1.5px;
+    }
+    body.real-mode .field-tag {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 800;
+      font-size: max(1.15cqw, 8px);
+      letter-spacing: 1px;
+      color: #0f172a;
+      background: var(--gold);
+      border-radius: 999px;
+      padding: max(0.35cqw, 2px) max(1cqw, 6px);
+    }
+    body.real-mode .field-pencil { shape-rendering: auto; animation: none; }
+    body.real-mode .pixel-input-text::placeholder { color: #94a3b8; }
+
+    body.real-mode .utfpr-ranking-panel {
+      font-family: 'Montserrat', sans-serif;
+      background: rgba(15, 23, 42, 0.96);
+      border: 2px solid #facc15;
+      border-radius: 12px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85);
+    }
+    body.real-mode .ranking-panel-title { font-family: 'Montserrat', sans-serif; font-size: max(2cqw, 9px); font-weight: 800; letter-spacing: 1.5px; border-bottom: 1px solid rgba(250, 204, 21, 0.4); }
+    body.real-mode .rank-tab-btn { font-family: 'Montserrat', sans-serif; font-size: max(1.4cqw, 8px); font-weight: 700; border-radius: 6px; }
+    body.real-mode .ranking-panel-table { border-radius: 8px; border-color: #1e293b; }
+    body.real-mode .rank-p-row { font-family: 'Montserrat', sans-serif; font-size: max(1.7cqw, 9px); font-weight: 600; }
+    body.real-mode .rank-empty { font-family: 'Montserrat', sans-serif; font-weight: 600; }
+
+    body.real-mode .garage-bar { border-radius: 2cqw; background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(8px); }
+    body.real-mode .selector-car-title { font-family: 'Montserrat', sans-serif; font-size: max(2.2cqw, 10px); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+
+    /* Celular: título quebra em duas linhas e fica à esquerda */
+    @media (max-width: 600px) {
+      .top-bar-title { font-size: 10.5px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- =========================================================
+       1. TOP BAR / CABEÇALHO SUPERIOR
+       ========================================================= -->
+  <header class="top-bar">
+    <h1 class="top-bar-title" data-i18n="title">Painel Automotivo com Trampoline e Controle em Tempo Real</h1>
+    <div class="top-bar-icons">
+      <button type="button" class="mode-emoji-btn" id="btnTogglePixel" onclick="togglePixelMode()">
+        <img src="assets/web/laptop_pixel.png" alt="" class="laptop-pixel-icon pixelated" draggable="false">
+        <span class="laptop-emoji">💻</span>
+      </button>
+      <button type="button" class="mode-emoji-btn" id="btnToggleLang" onclick="toggleLanguage()">
+        <img src="assets/web/globo_pixel.png" alt="" class="globe-pixel-icon pixelated" draggable="false">
+        <span class="globe-emoji">🌎</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- =========================================================
+       2. VIEWPORT CENTRAL / FRAME PRINCIPAL (TABLET)
+       ========================================================= -->
+  <main class="tablet-stage" id="gameFold">
+    <div class="tablet-frame">
+      <img src="assets/web/laptop_frame_pixel_trimmed.png" alt="" class="tablet-frame-img frame-pixel pixelated" draggable="false">
+      <img src="assets/web/tablet_real_trimmed.png" alt="" class="tablet-frame-img frame-real" draggable="false">
+
+      <div class="tablet-screen" id="tabletScreen">
+        <!-- Fundo da tela: entrada da UTFPR -->
+        <img src="assets/menu-jogo/fundo_menu.jpg" alt="Entrada UTFPR" class="screen-bg-img bg-pixel pixelated" draggable="false">
+        <img src="assets/menu-jogo/fundo_menu_real.jpg" alt="Entrada UTFPR" class="screen-bg-img bg-real" draggable="false">
+
+        <div class="utfpr-menu-center">
+
+          <!-- VIEW 1: MENU PRINCIPAL (JOGAR / RANKING / GARAGEM) -->
+          <div class="utfpr-screen-view active" id="viewMenuMain">
+            <button type="button" class="pixel-btn" onclick="openPilotScreen()">
+              <div class="pixel-btn-content">
+                <img src="assets/menu-jogo/btn_blank.svg" alt="" class="btn-pixel-asset">
+                <span class="btn-pixel-label" data-i18n="play">JOGAR</span>
+              </div>
+              <span class="btn-real-text" data-i18n="play">JOGAR</span>
+            </button>
+            <button type="button" class="pixel-btn" onclick="openRankingScreen()">
+              <div class="pixel-btn-content">
+                <img src="assets/menu-jogo/btn_blank.svg" alt="" class="btn-pixel-asset">
+                <span class="btn-pixel-label" data-i18n="ranking">RANKING</span>
+              </div>
+              <span class="btn-real-text" data-i18n="ranking">RANKING</span>
+            </button>
+            <button type="button" class="pixel-btn" onclick="openGarageScreen()">
+              <div class="pixel-btn-content">
+                <img src="assets/menu-jogo/btn_blank.svg" alt="" class="btn-pixel-asset">
+                <span class="btn-pixel-label" data-i18n="garage">GARAGEM</span>
+              </div>
+              <span class="btn-real-text" data-i18n="garage">GARAGEM</span>
+            </button>
+          </div>
+
+          <!-- VIEW 2: NOME E IDADE -->
+          <div class="utfpr-screen-view" id="viewMenuPilot">
+            <label class="pilot-field">
+              <span class="field-tag" data-i18n="name">NOME</span>
+              <span class="pixel-input-box">
+                <input type="text" id="pilotNameField" class="pixel-input-text" maxlength="12" value="AMANDA" placeholder="NOME" data-i18n-ph="name" autocomplete="off" spellcheck="false" enterkeyhint="next">
+                <svg class="field-pencil" viewBox="0 0 8 8" aria-hidden="true"><path fill="#FFBB00" d="M5 0h1v1h1v1h1v1H7v1H6v1H5v1H4v1H3v1H0V5h1V4h1V3h1V2h1V1h1z"/><path fill="#1c0326" d="M1 6h1v1H1z"/><path fill="#fff2b3" d="M5 1h1v1H5zM6 2h1v1H6z"/></svg>
+              </span>
+            </label>
+            <label class="pilot-field">
+              <span class="field-tag" data-i18n="age">IDADE</span>
+              <span class="pixel-input-box">
+                <input type="number" id="pilotAgeField" class="pixel-input-text" min="5" max="150" value="21" placeholder="IDADE" data-i18n-ph="age" autocomplete="off" inputmode="numeric" enterkeyhint="go">
+                <svg class="field-pencil" viewBox="0 0 8 8" aria-hidden="true"><path fill="#FFBB00" d="M5 0h1v1h1v1h1v1H7v1H6v1H5v1H4v1H3v1H0V5h1V4h1V3h1V2h1V1h1z"/><path fill="#1c0326" d="M1 6h1v1H1z"/><path fill="#fff2b3" d="M5 1h1v1H5zM6 2h1v1H6z"/></svg>
+              </span>
+            </label>
+            <button type="button" class="pixel-btn" onclick="confirmPilotAndGoModes()">
+              <div class="pixel-btn-content">
+                <img src="assets/menu-jogo/btn_blank.svg" alt="" class="btn-pixel-asset">
+                <span class="btn-pixel-label" data-i18n="start">INICIAR</span>
+              </div>
+              <span class="btn-real-text" data-i18n="start">INICIAR</span>
+            </button>
+            <button type="button" class="pixel-btn" onclick="openMainScreen()">
+              <div class="pixel-btn-content">
+                <img src="assets/menu-jogo/btn_blank.svg" alt="" class="btn-pixel-asset">
+                <span class="btn-pixel-label" data-i18n="back">VOLTAR</span>
+              </div>
+              <span class="btn-real-text" data-i18n="back">VOLTAR</span>
+            </button>
+          </div>
+
+          <!-- VIEW 2B: ESCOLHA DO CARRO -->
+          <div class="utfpr-screen-view" id="viewMenuCar">
+            <div class="car-pick">
+              <span class="field-tag car-pick-tag" data-i18n="chooseCar">ESCOLHA SEU CARRO</span>
+              <div class="car-pick-stage">
+                <img id="carPickPixel" class="car-pick-pixel pixelated" src="assets/web/camaro_garagem_pixel.png" alt="" draggable="false">
+                <div class="car-pick-real">
+                  <img src="assets/hangar-3d/hangar_bg.jpg" alt="" draggable="false">
+                  <img id="carPickRealCar" src="assets/hangar-3d/camaro_1.webp?v=6" alt="" draggable="false">
+                </div>
+              </div>
+              <div class="car-pick-bar">
+                <button type="button" class="g-arrow-btn" onclick="prevCar()" data-i18n-title="prevCar">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="20" y1="12" x2="4" y2="12"></line><polyline points="10 6 4 12 10 18"></polyline></svg>
+                </button>
+                <span class="car-pick-name" id="carPickName">Chevrolet Camaro Conversível</span>
+                <button type="button" class="g-arrow-btn" onclick="nextCar()" data-i18n-title="nextCar">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"></line><polyline points="14 6 20 12 14 18"></polyline></svg>
+                </button>
+              </div>
+            </div>
+            <div class="car-pick-actions">
+              <button type="button" class="pixel-btn" onclick="openPilotScreen()">
+                <div class="pixel-btn-content">
+                  <img src="assets/menu-jogo/btn_blank.svg" alt="" class="btn-pixel-asset">
+                  <span class="btn-pixel-label" data-i18n="back">VOLTAR</span>
+                </div>
+                <span class="btn-real-text" data-i18n="back">VOLTAR</span>
+              </button>
+              <button type="button" class="pixel-btn" onclick="chooseCarAndGoModes()">
+                <div class="pixel-btn-content">
+                  <img src="assets/menu-jogo/btn_blank.svg" alt="" class="btn-pixel-asset">
+                  <span class="btn-pixel-label" data-i18n="choose">ESCOLHER</span>
+                </div>
+                <span class="btn-real-text" data-i18n="choose">ESCOLHER</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- VIEW 3: MODOS DE JOGO -->
+          <div class="utfpr-screen-view" id="viewMenuModes">
+            <button type="button" class="pixel-btn" onclick="selectGameModeAndStart('PASSEIO')">
+              <div class="pixel-btn-content">
+                <img src="assets/menu-jogo/btn_blank.svg" alt="" class="btn-pixel-asset">
+                <span class="btn-pixel-label" data-i18n="m_passeio">PASSEIO</span>
+              </div>
+              <span class="btn-real-text" data-i18n="m_passeio">PASSEIO</span>
+            </button>
+            <button type="button" class="pixel-btn" onclick="selectGameModeAndStart('TRÂNSITO')">
+              <div class="pixel-btn-content">
+                <img src="assets/menu-jogo/btn_blank.svg" alt="" class="btn-pixel-asset">
+                <span class="btn-pixel-label" data-i18n="m_transito">TRÂNSITO</span>
+              </div>
+              <span class="btn-real-text" data-i18n="m_transito">TRÂNSITO</span>
+            </button>
+            <button type="button" class="pixel-btn" onclick="selectGameModeAndStart('CORRIDA')">
+              <div class="pixel-btn-content">
+                <img src="assets/menu-jogo/btn_blank.svg" alt="" class="btn-pixel-asset">
+                <span class="btn-pixel-label" data-i18n="m_corrida">CORRIDA</span>
+              </div>
+              <span class="btn-real-text" data-i18n="m_corrida">CORRIDA</span>
+            </button>
+            <button type="button" class="pixel-btn" onclick="openCarScreen()">
+              <div class="pixel-btn-content">
+                <img src="assets/menu-jogo/btn_blank.svg" alt="" class="btn-pixel-asset">
+                <span class="btn-pixel-label" data-i18n="back">VOLTAR</span>
+              </div>
+              <span class="btn-real-text" data-i18n="back">VOLTAR</span>
+            </button>
+          </div>
+
+          <!-- VIEW 4: RANKING -->
+          <div class="utfpr-screen-view" id="viewMenuRanking">
+            <div class="utfpr-ranking-panel">
+              <div class="ranking-panel-title" data-i18n="rankTitle">★ RANKING UTFPR • TOP GEAR ★</div>
+              <div class="ranking-panel-filters" id="menuRankFilters">
+                <button type="button" class="rank-tab-btn active" data-f="ALL" onclick="filterMenuRanking('ALL')" data-i18n="all">TODOS</button>
+                <button type="button" class="rank-tab-btn" data-f="PASSEIO" onclick="filterMenuRanking('PASSEIO')" data-i18n="m_passeio">PASSEIO</button>
+                <button type="button" class="rank-tab-btn" data-f="TRÂNSITO" onclick="filterMenuRanking('TRÂNSITO')" data-i18n="m_transito">TRÂNSITO</button>
+                <button type="button" class="rank-tab-btn" data-f="CORRIDA" onclick="filterMenuRanking('CORRIDA')" data-i18n="m_corrida">CORRIDA</button>
+              </div>
+              <div class="ranking-panel-table" id="menuRankingRows"></div>
+              <div class="ranking-panel-footer">
+                <button type="button" class="pixel-btn" onclick="openMainScreen()">
+                  <div class="pixel-btn-content">
+                    <img src="assets/menu-jogo/btn_blank.svg" alt="" class="btn-pixel-asset">
+                    <span class="btn-pixel-label" data-i18n="back">VOLTAR</span>
+                  </div>
+                  <span class="btn-real-text" data-i18n="back">VOLTAR</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /utfpr-menu-center -->
+
+        <!-- VIEW 5: GARAGEM (DENTRO DO TABLET) -->
+        <div class="tablet-garage" id="viewMenuGarage" data-sub="exterior">
+          <!-- Exterior pixel -->
+          <div class="g-layer" id="garagePixelView">
+            <img id="garagePixelImg" src="assets/web/camaro_garagem_pixel.png" alt="Carro na garagem" class="g-img pixelated" draggable="false">
+          </div>
+          <!-- Exterior real: showroom 360° -->
+          <div class="g-layer garage-real-container" id="garageRealView">
+            <img src="assets/hangar-3d/hangar_bg.jpg" alt="Showroom" class="g-img" draggable="false">
+            <img id="hangarCarImg" src="assets/hangar-3d/camaro_1.webp" alt="Carro 3D" class="g-img garage-car-layer" draggable="false">
+            <img id="carBrandLogo" src="assets/camaro-cockpit/vampire_logo.png" alt="Logo" class="brand-logo-badge" draggable="false">
+            <div class="drag-hint" data-i18n="drag">⟲ ARRASTE PARA GIRAR 360°</div>
+          </div>
+          <!-- Painel (interior) pixel -->
+          <div class="g-layer" id="interiorPixelView">
+            <img id="interiorPixelImg" src="assets/web/camaro_interior_pixel.png" alt="Interior" class="g-img pixelated" draggable="false">
+          </div>
+          <!-- Painel (interior) real -->
+          <div class="g-layer" id="interiorRealView">
+            <img id="interiorImg" src="assets/interiors/camaro_interior.jpg" alt="Interior" class="g-img" draggable="false">
+          </div>
+
+          <!-- VOLTAR: na garagem volta ao menu; no painel volta à garagem -->
+          <div class="g-corner g-corner-left">
+              <button type="button" class="pixel-btn" onclick="garageBack()">
+                <div class="pixel-btn-content">
+                  <img src="assets/menu-jogo/btn_blank.svg" alt="" class="btn-pixel-asset">
+                  <span class="btn-pixel-label" data-i18n="back">VOLTAR</span>
+                </div>
+                <span class="btn-real-text" data-i18n="back">VOLTAR</span>
+              </button>
+          </div>
+
+          <!-- PAINEL: abre o interior do carro -->
+          <div class="g-corner g-corner-right only-exterior">
+              <button type="button" class="pixel-btn" onclick="setGarageSubView('interior')">
+                <div class="pixel-btn-content">
+                  <img src="assets/menu-jogo/btn_blank.svg" alt="" class="btn-pixel-asset">
+                  <span class="btn-pixel-label" data-i18n="panel">PAINEL</span>
+                </div>
+                <span class="btn-real-text" data-i18n="panel">PAINEL</span>
+              </button>
+          </div>
+
+          <!-- Barra branca: ← nome do carro → -->
+          <div class="garage-bar only-exterior">
+            <button type="button" class="g-arrow-btn" onclick="prevCar()" data-i18n-title="prevCar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="20" y1="12" x2="4" y2="12"></line><polyline points="10 6 4 12 10 18"></polyline></svg>
+            </button>
+            <h2 class="selector-car-title" id="selectorTitle">Chevrolet Camaro Conversível</h2>
+            <button type="button" class="g-arrow-btn" onclick="nextCar()" data-i18n-title="nextCar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"></line><polyline points="14 6 20 12 14 18"></polyline></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Canvas do jogo -->
+        <div class="game-canvas-overlay" id="gameCanvasOverlay">
+          <canvas id="gameCanvas"></canvas>
+        </div>
+      </div><!-- /tablet-screen -->
+    </div><!-- /tablet-frame -->
+  </main>
+
+  <!-- =========================================================
+       3. SEÇÃO INFERIOR / RODAPÉ E CRÉDITOS
+       ========================================================= -->
+  <footer class="credits-fold" id="creditsFold">
+    <img src="assets/web/inicial.jpg" alt="Campus UTFPR Ponta Grossa" class="credits-bg-img bg-pixel pixelated" draggable="false">
+    <img src="assets/web/inicial_real.jpg" alt="Campus UTFPR Ponta Grossa" class="credits-bg-img bg-real" draggable="false">
+
+    <img src="assets/web/amanda_pixel.png" alt="Amanda" class="avatar avatar-amanda avatar-pixel pixelated" draggable="false">
+    <img src="assets/web/magda_pixel.png" alt="Magda" class="avatar avatar-magda avatar-pixel pixelated" draggable="false">
+    <img src="assets/web/amanda_real_web.png" alt="Amanda" class="avatar avatar-amanda avatar-real" draggable="false" loading="lazy">
+    <img src="assets/web/magda_real.png" alt="Magda" class="avatar avatar-magda avatar-real" draggable="false" loading="lazy">
+    <span class="avatar-name name-amanda">Amanda</span>
+    <span class="avatar-name name-magda">Magda</span>
+  </footer>
+
+  <!-- Motor de Jogo Pseudo-3D -->
+  <script src="game-engine.js"></script>
+
+  <script>
+    /* =====================================================================
+       ESTADO GERAL
+       ===================================================================== */
+    let currentCarIndex = 0;
+    let virtualAngle = 30.0;
+    let dragVelocity = 0.0;
+    let isDraggingShowroom = false;
+    let dragLastX = 0;
+    let isPixelMode = true;
+    let currentLang = 'pt';
+
+    /* =====================================================================
+       TEXTOS PT ⇄ EN (🌎)
+       ===================================================================== */
+    const I18N = {
+      pt: {
+        docTitle: 'Painel Automotivo com Trampoline e Controle em Tempo Real | UTFPR',
+        title: 'Painel Automotivo com Trampoline e Controle em Tempo Real',
+        play: 'JOGAR', ranking: 'RANKING', garage: 'GARAGEM', start: 'INICIAR', back: 'VOLTAR',
+        backArrow: '◂ VOLTAR', name: 'NOME', age: 'IDADE',
+        m_passeio: 'PASSEIO', m_transito: 'TRÂNSITO', m_corrida: 'CORRIDA',
+        rankTitle: '★ RANKING UTFPR • TOP GEAR ★', all: 'TODOS',
+        rankEmpty: '★ NENHUM RECORDE REGISTRADO ★', rankEmptySub: 'SEJA O PRIMEIRO A JOGAR E ENTRAR NO RANKING!',
+        ageSuffix: 'a',
+        drag: '⟲ ARRASTE PARA GIRAR 360°', panel: 'PAINEL',
+        prevCar: 'Carro anterior', nextCar: 'Próximo carro',
+        toPixel: 'Mudar para modo pixel', toReal: 'Mudar para modo foto real',
+        toggleLang: 'Switch to English',
+        chooseCar: 'ESCOLHA SEU CARRO', choose: 'ESCOLHER',
+        cars: { camaro: 'Chevrolet Camaro Conversível', corvette: 'Chevrolet Corvette EV Conversível' }
+      },
+      en: {
+        docTitle: 'Automotive Dashboard with Trampoline and Real-Time Control | UTFPR',
+        title: 'Automotive Dashboard with Trampoline and Real-Time Control',
+        play: 'PLAY', ranking: 'RANKING', garage: 'GARAGE', start: 'START', back: 'BACK',
+        backArrow: '◂ BACK', name: 'NAME', age: 'AGE',
+        m_passeio: 'CRUISE', m_transito: 'TRAFFIC', m_corrida: 'RACE',
+        rankTitle: '★ UTFPR RANKING • TOP GEAR ★', all: 'ALL',
+        rankEmpty: '★ NO RECORDS YET ★', rankEmptySub: 'BE THE FIRST TO PLAY AND MAKE THE RANKING!',
+        ageSuffix: 'y',
+        drag: '⟲ DRAG TO ROTATE 360°', panel: 'DASHBOARD',
+        prevCar: 'Previous car', nextCar: 'Next car',
+        toPixel: 'Switch to pixel mode', toReal: 'Switch to real photo mode',
+        toggleLang: 'Mudar para português',
+        chooseCar: 'CHOOSE YOUR CAR', choose: 'SELECT',
+        cars: { camaro: 'Chevrolet Camaro Convertible', corvette: 'Chevrolet Corvette EV Convertible' }
+      }
+    };
+    const MODE_KEYS = { 'PASSEIO': 'm_passeio', 'TRÂNSITO': 'm_transito', 'CORRIDA': 'm_corrida' };
+
+    function t(key) { return I18N[currentLang][key]; }
+    function modeLabel(mode) { return MODE_KEYS[mode] ? t(MODE_KEYS[mode]) : mode; }
+
+    function applyLanguage() {
+      document.documentElement.lang = currentLang === 'en' ? 'en' : 'pt-BR';
+      document.title = t('docTitle');
+      document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+      document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
+      document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        el.title = t(el.dataset.i18nTitle);
+        el.setAttribute('aria-label', t(el.dataset.i18nTitle));
+      });
+      const langBtn = document.getElementById('btnToggleLang');
+      langBtn.title = t('toggleLang');
+      langBtn.setAttribute('aria-label', t('toggleLang'));
+      if (typeof UTFPRGame !== 'undefined' && UTFPRGame.setLang) UTFPRGame.setLang(currentLang);
+      document.getElementById('selectorTitle').textContent = t('cars')[CARS_CONFIG[currentCarIndex].id];
+      updatePixelButton();
+      renderMenuRanking();
+    }
+
+    function toggleLanguage() {
+      currentLang = currentLang === 'pt' ? 'en' : 'pt';
+      playBeep(currentLang === 'en' ? 660 : 550, 'square', 0.1);
+      try { localStorage.setItem('icm_lang', currentLang); } catch (e) {}
+      applyLanguage();
+    }
+
+    function updatePixelButton() {
+      const btn = document.getElementById('btnTogglePixel');
+      const label = isPixelMode ? t('toReal') : t('toPixel');
+      btn.title = label;
+      btn.setAttribute('aria-label', label);
+    }
+    let garageSubView = 'exterior';
+    let isGameRunning = false;
+
+    const CARS_CONFIG = [
+      {
+        id: "camaro",
+        title: "Chevrolet Camaro Conversível",
+        meta: "1969 • Damon Salvatore",
+        logo: "assets/camaro-cockpit/vampire_logo.png",
+        numFrames: 12,
+        startAngle: 30.0,
+        framePrefix: "assets/hangar-3d/camaro_",
+        garagePixelImg: "assets/web/camaro_garagem_pixel.png",
+        interiorImg: "assets/interiors/camaro_interior.jpg",
+        interiorPixelImg: "assets/web/camaro_interior_pixel.png"
+      },
+      {
+        id: "corvette",
+        title: "Chevrolet Corvette EV Conversível",
+        meta: "1956 • Margot Robbie (Barbie)",
+        logo: "assets/barbie_logo.png",
+        numFrames: 10,
+        startAngle: 36.0,
+        framePrefix: "assets/hangar-3d/barbie_",
+        garagePixelImg: "assets/web/corvette_garagem_pixel.png",
+        interiorImg: "assets/interiors/barbie_interior.jpg",
+        interiorPixelImg: "assets/web/corvette_interior_pixel.png"
+      }
+    ];
+
+    function preloadAllFrames() {
+      CARS_CONFIG.forEach(car => {
+        for (let i = 0; i < car.numFrames; i++) {
+          const img = new Image();
+          img.src = `${car.framePrefix}${i}.webp?v=6`;
+        }
+        [car.garagePixelImg, car.interiorImg, car.interiorPixelImg].forEach(url => {
+          if (url) { const im = new Image(); im.src = url; }
+        });
+      });
+    }
+    preloadAllFrames();
+
+    /* Som retrô 8-bit (Web Audio API) */
+    function playBeep(freq = 440, type = 'square', duration = 0.08) {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    /* =====================================================================
+       MODO PIXEL ⇄ MODO REAL (💻)
+       ===================================================================== */
+    function setPixelMode(pixel) {
+      if (isPixelMode === pixel) return;
+      isPixelMode = pixel;
+      playBeep(isPixelMode ? 780 : 390, 'square', 0.12);
+      try { localStorage.setItem('icm_pixel_mode', isPixelMode ? '1' : '0'); } catch (e) {}
+      updateDisplayModes();
+    }
+
+    function togglePixelMode() { setPixelMode(!isPixelMode); }
+
+    function updateDisplayModes() {
+      const car = CARS_CONFIG[currentCarIndex];
+      document.body.classList.toggle('real-mode', !isPixelMode);
+      updatePixelButton();
+
+      // Camadas da garagem: (pixel | real) × (exterior | interior)
+      const layers = {
+        garagePixelView:   isPixelMode && garageSubView === 'exterior',
+        garageRealView:    !isPixelMode && garageSubView === 'exterior',
+        interiorPixelView: isPixelMode && garageSubView === 'interior',
+        interiorRealView:  !isPixelMode && garageSubView === 'interior'
+      };
+      Object.entries(layers).forEach(([id, show]) => {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('show', show);
+      });
+
+      document.getElementById('viewMenuGarage').dataset.sub = garageSubView;
+
+      document.getElementById('garagePixelImg').src = car.garagePixelImg;
+      document.getElementById('interiorPixelImg').src = car.interiorPixelImg;
+
+      // Tela de escolha do carro
+      document.getElementById('carPickPixel').src = car.garagePixelImg;
+      document.getElementById('carPickRealCar').src = `${car.framePrefix}1.webp?v=6`;
+      document.getElementById('carPickName').textContent = t('cars')[car.id];
+
+      // O jogo acompanha o modo visual do site
+      if (typeof UTFPRGame !== 'undefined' && UTFPRGame.setVisualMode) UTFPRGame.setVisualMode(!isPixelMode);
+    }
+
+    function updateShowroomDisplay() {
+      const car = CARS_CONFIG[currentCarIndex];
+      document.getElementById('selectorTitle').textContent = t('cars')[car.id];
+      document.getElementById('interiorImg').src = car.interiorImg;
+      document.getElementById('carBrandLogo').src = car.logo;
+      updateDisplayModes();
+    }
+
+    /* =====================================================================
+       NAVEGAÇÃO ENTRE AS TELAS DO TABLET
+       ===================================================================== */
+    const MENU_VIEWS = ['viewMenuMain', 'viewMenuPilot', 'viewMenuCar', 'viewMenuModes', 'viewMenuRanking', 'viewMenuGarage'];
+
+    function switchMenuView(viewId) {
+      MENU_VIEWS.forEach(v => {
+        const el = document.getElementById(v);
+        if (el) el.classList.toggle('active', v === viewId);
+      });
+    }
+
+    function openMainScreen() { playBeep(320, 'square', 0.08); switchMenuView('viewMenuMain'); }
+    function openPilotScreen() {
+      playBeep(480, 'square', 0.08);
+      switchMenuView('viewMenuPilot');
+      // No computador, já abre com o nome selecionado: é só digitar.
+      // (No celular não, para o teclado não pular na cara.)
+      if (window.matchMedia && matchMedia('(pointer: fine)').matches) {
+        setTimeout(() => {
+          const f = document.getElementById('pilotNameField');
+          if (f) { f.focus(); f.select(); }
+        }, 0);
+      }
+    }
+
+    function openGarageScreen() {
+      playBeep(440, 'square', 0.08);
+      garageSubView = 'exterior';
+      updateShowroomDisplay();
+      switchMenuView('viewMenuGarage');
+    }
+
+    function setGarageSubView(view) {
+      if (garageSubView === view) return;
+      playBeep(view === 'interior' ? 560 : 500, 'square', 0.06);
+      garageSubView = view;
+      updateDisplayModes();
+    }
+
+    // VOLTAR da garagem: do painel volta para o carro; do carro volta para o menu
+    function garageBack() {
+      if (garageSubView === 'interior') {
+        setGarageSubView('exterior');
+      } else {
+        openMainScreen();
+      }
+    }
+
+    function isGarageOpen() {
+      const g = document.getElementById('viewMenuGarage');
+      return g && g.classList.contains('active');
+    }
+
+    function focusPilotField(fieldId) {
+      const input = document.getElementById(fieldId);
+      if (input) input.focus();
+    }
+
+    // Nome/idade → escolha do carro → modo de jogo
+    function confirmPilotAndGoModes() { openCarScreen(); }
+    function openCarScreen() {
+      playBeep(600, 'square', 0.1);
+      updateShowroomDisplay();
+      switchMenuView('viewMenuCar');
+    }
+    function chooseCarAndGoModes() { playBeep(700, 'square', 0.1); switchMenuView('viewMenuModes'); }
+    function isCarPickOpen() {
+      const v = document.getElementById('viewMenuCar');
+      return v && v.classList.contains('active');
+    }
+
+    /* =====================================================================
+       JOGO + RANKING
+       ===================================================================== */
+    let currentRankFilter = 'ALL';
+    let selectedGameMode = 'PASSEIO';
+
+    function loadRankingData() {
+      try {
+        const raw = localStorage.getItem('utfpr_topgear_ranking_v3');
+        if (raw) return JSON.parse(raw);
+      } catch (err) {}
+      return [];
+    }
+
+    function saveRankingData(list) {
+      try {
+        localStorage.removeItem('utfpr_topgear_ranking_v2');
+        localStorage.setItem('utfpr_topgear_ranking_v3', JSON.stringify(list));
+      } catch (err) {}
+    }
+
+    let rankingList = loadRankingData();
+
+    function selectGameModeAndStart(mode) {
+      playBeep(720, 'triangle', 0.14);
+      selectedGameMode = mode;
+      const nameInput = document.getElementById('pilotNameField');
+      const ageInput = document.getElementById('pilotAgeField');
+      const pilotName = (nameInput && nameInput.value ? nameInput.value.trim().toUpperCase() : '') || 'PILOTO';
+      const pilotAge = parseInt(ageInput && ageInput.value ? ageInput.value : '21', 10) || 21;
+      const carIndex = currentCarIndex;
+      const carName = carIndex === 1 ? 'CORVETTE 56' : 'CAMARO 69';
+
+      const overlay = document.getElementById('gameCanvasOverlay');
+      const gameCanvas = document.getElementById('gameCanvas');
+      if (!overlay || !gameCanvas || typeof UTFPRGame === 'undefined') return;
+
+      overlay.classList.add('active');
+      isGameRunning = true;
+
+      UTFPRGame.init(gameCanvas);
+      if (UTFPRGame.setLang) UTFPRGame.setLang(currentLang);
+      UTFPRGame.start(mode, { name: pilotName, age: pilotAge, car: carName, carIndex: carIndex, realMode: !isPixelMode }, function(result) {
+        overlay.classList.remove('active');
+        isGameRunning = false;
+
+        if (result.aborted) {
+          switchMenuView('viewMenuMain');
+          return;
+        }
+
+        rankingList.push({
+          name: result.playerInfo.name,
+          age: result.playerInfo.age,
+          car: result.playerInfo.car,
+          mode: result.mode,
+          score: result.score
+        });
+        saveRankingData(rankingList);
+        openRankingScreen();
+      });
+    }
+
+    function openRankingScreen() {
+      playBeep(440, 'square', 0.08);
+      switchMenuView('viewMenuRanking');
+      renderMenuRanking();
+    }
+
+    function filterMenuRanking(filterCode) {
+      playBeep(520, 'square', 0.06);
+      currentRankFilter = filterCode;
+      document.querySelectorAll('#menuRankFilters .rank-tab-btn').forEach(t => {
+        t.classList.toggle('active', t.getAttribute('data-f') === filterCode);
+      });
+      renderMenuRanking();
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function renderMenuRanking() {
+      const container = document.getElementById('menuRankingRows');
+      if (!container) return;
+
+      const filtered = rankingList
+        .filter(item => currentRankFilter === 'ALL' || item.mode === currentRankFilter)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 8);
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="rank-empty">
+            ${t('rankEmpty')}<br>
+            <span>${t('rankEmptySub')}</span>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map((entry, idx) => `
+        <div class="${idx === 0 ? 'rank-p-row gold' : 'rank-p-row'}">
+          <span>${idx === 0 ? '🏆#1' : '#' + (idx + 1)}</span>
+          <span>${escapeHtml(entry.name)} (${escapeHtml(entry.age)}${t('ageSuffix')})</span>
+          <span>${escapeHtml(entry.car)}</span>
+          <span>${escapeHtml(modeLabel(entry.mode))}</span>
+          <span style="text-align:right;font-weight:bold;color:#facc15;">${escapeHtml(entry.score)}</span>
+        </div>`).join('');
+    }
+
+    /* =====================================================================
+       GARAGEM: TROCA DE CARRO + SHOWROOM 360°
+       ===================================================================== */
+    function prevCar() {
+      playBeep(400, 'square', 0.06);
+      currentCarIndex = (currentCarIndex - 1 + CARS_CONFIG.length) % CARS_CONFIG.length;
+      virtualAngle = CARS_CONFIG[currentCarIndex].startAngle;
+      updateShowroomDisplay();
+    }
+
+    function nextCar() {
+      playBeep(400, 'square', 0.06);
+      currentCarIndex = (currentCarIndex + 1) % CARS_CONFIG.length;
+      virtualAngle = CARS_CONFIG[currentCarIndex].startAngle;
+      updateShowroomDisplay();
+    }
+
+    function renderShowroomLoop() {
+      if (!isDraggingShowroom && Math.abs(dragVelocity) > 0.0001) {
+        virtualAngle = (virtualAngle + dragVelocity) % 360;
+        if (virtualAngle < 0) virtualAngle += 360;
+        dragVelocity *= 0.92;
+      }
+      const car = CARS_CONFIG[currentCarIndex];
+      const frameIndex = Math.floor((virtualAngle / 360) * car.numFrames) % car.numFrames;
+      const targetSrc = `${car.framePrefix}${frameIndex}.webp?v=6`;
+      const carImg = document.getElementById('hangarCarImg');
+      if (carImg && !carImg.src.endsWith(targetSrc)) carImg.src = targetSrc;
+      requestAnimationFrame(renderShowroomLoop);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      // Enter no NOME vai para IDADE; Enter na IDADE confirma
+      document.getElementById('pilotNameField').addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); const a = document.getElementById('pilotAgeField'); a.focus(); a.select(); }
+      });
+      document.getElementById('pilotAgeField').addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); confirmPilotAndGoModes(); }
+      });
+
+      // Preferências salvas neste navegador (idioma e modo)
+      try {
+        if (localStorage.getItem('icm_lang') === 'en') currentLang = 'en';
+        if (localStorage.getItem('icm_pixel_mode') === '0') isPixelMode = false;
+      } catch (e) {}
+      updateShowroomDisplay();
+      applyLanguage();
+      renderShowroomLoop();
+
+      const viewport = document.getElementById('garageRealView');
+      viewport.addEventListener('pointerdown', (e) => {
+        isDraggingShowroom = true;
+        dragLastX = e.clientX;
+        dragVelocity = 0;
+        viewport.classList.add('is-dragging');
+        if (viewport.setPointerCapture) viewport.setPointerCapture(e.pointerId);
+      });
+      window.addEventListener('pointermove', (e) => {
+        if (!isDraggingShowroom) return;
+        const deltaX = e.clientX - dragLastX;
+        dragLastX = e.clientX;
+        const angleDelta = -deltaX * 0.55;
+        virtualAngle = (virtualAngle + angleDelta) % 360;
+        if (virtualAngle < 0) virtualAngle += 360;
+        dragVelocity = angleDelta * 0.45;
+      });
+      const stopDrag = (e) => {
+        if (!isDraggingShowroom) return;
+        isDraggingShowroom = false;
+        viewport.classList.remove('is-dragging');
+        try { viewport.releasePointerCapture(e.pointerId); } catch (_) {}
+      };
+      window.addEventListener('pointerup', stopDrag);
+      window.addEventListener('pointercancel', stopDrag);
+    });
+
+    // Setas do teclado trocam de carro só com a garagem aberta (não conflita com o jogo)
+    window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (isGameRunning) return;
+      if (isCarPickOpen()) {
+        if (e.key === 'ArrowLeft') prevCar();
+        if (e.key === 'ArrowRight') nextCar();
+        if (e.key === 'Enter') chooseCarAndGoModes();
+        if (e.key === 'Escape') openPilotScreen();
+        return;
+      }
+      if (!isGarageOpen()) return;
+      if (e.key === 'Escape') { garageBack(); return; }
+      if (garageSubView === 'interior') return;
+      if (e.key === 'ArrowLeft') prevCar();
+      if (e.key === 'ArrowRight') nextCar();
+    });
+  </script>
+</body>
+</html>

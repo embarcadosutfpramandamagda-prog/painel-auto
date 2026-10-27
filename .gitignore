@@ -1,0 +1,25 @@
+# saída do build
+build/
+bin/
+*.o
+*.obj
+*.exe
+*.out
+*.app
+
+# gerado pelo goil / Trampoline
+*_exe
+tpl_*.c
+tpl_*.h
+
+# lixo de editor e do macOS
+*~
+.DS_Store
+
+# Trampoline e arquivos gerados pelo goil (oil/icm_posix.oil)
+trampoline/
+oil/build/
+oil/make.py
+oil/icm_posix/
+oil/trace.json
+oil/readtrace.py

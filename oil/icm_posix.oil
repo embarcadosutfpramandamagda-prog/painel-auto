@@ -1,0 +1,160 @@
+/*
+ * icm_posix.oil - o mesmo ICM do icm.oil, pro alvo posix do Trampoline
+ * (roda como processo no Linux ou no Mac, sem placa).
+ *
+ * Diferenças pro icm.oil (placa):
+ *   - no posix o SystemCounter anda de 10 em 10 ms (timer do ViPER), então os
+ *     alarmes estão em ticks de 10 ms: 1, 2, 5, 10 e 100 ticks = 10, 20, 50, 100 e 1000 ms;
+ *   - a interrupção do CAN vem de um sinal Unix (SIGPIPE), que o Trampoline
+ *     posix entrega pra ISR2_CAN;
+ *   - Task_VehicleSim faz o papel do resto do carro (ECM, TCM e sensores): a cada
+ *     tick anda a simulação e, se chegou frame, manda o SIGPIPE.
+ *
+ * Como compilar (Trampoline clonado na pasta trampoline/ do projeto):
+ *   cd oil
+ *   ../trampoline/goil/makefile-unix/goil --target=posix/linux --templates=../trampoline/goil/templates/ icm_posix.oil
+ *     (no Mac Intel: --target=posix/darwin; Mac M1/M2/M3: --target=posix/darwin/arm64)
+ *   ./make.py
+ *   ./icm_posix_exe          (Ctrl+C pra sair)
+ */
+OIL_VERSION = "2.5";
+
+IMPLEMENTATION trampoline {
+    TASK {
+        UINT32 STACKSIZE = 32768;
+    };
+    ISR {
+        UINT32 STACKSIZE = 32768;
+    };
+};
+
+CPU icm_module {
+    OS config {
+        STATUS = EXTENDED;
+        TRACE = TRUE {
+            FORMAT = json;
+            PROC = TRUE;
+            RESOURCE = TRUE;
+            ALARM = TRUE;
+            EVENT = TRUE;
+        };
+        BUILD = TRUE {
+            TRAMPOLINE_BASE_PATH = "../trampoline";
+            APP_SRC = "../src/tasks.c";
+            APP_SRC = "../src/icm_data.c";
+            APP_SRC = "../src/icm_display.c";
+            APP_SRC = "../src/vehicle_sim.c";
+            CFLAGS = "-I../include -DTRAMPOLINE_RTOS -DICM_POSIX_DEMO -std=gnu99";
+            APP_NAME = "icm_posix_exe";
+            LINKER = "gcc";
+            LDFLAGS = "-lm";
+            SYSTEM = PYTHON;
+        };
+    };
+
+    APPMODE std_app_mode {};
+
+    /* protege o ICM_Data; teto = maior prioridade entre quem usa (10) */
+    RESOURCE ICM_Resource {
+        RESOURCEPROPERTY = STANDARD;
+    };
+
+    EVENT Event_CAN_RX {
+        MASK = AUTO;
+    };
+
+    /* "interrupção" do controlador CAN, gerada pela Task_VehicleSim */
+    ISR ISR2_CAN {
+        CATEGORY = 2;
+        PRIORITY = 20;
+        SOURCE = SIGPIPE;
+    };
+
+    TASK Task_CAN_RX {
+        PRIORITY = 10;
+        AUTOSTART = TRUE { APPMODE = std_app_mode; };
+        ACTIVATION = 1;
+        SCHEDULE = FULL;
+        EVENT = Event_CAN_RX;
+        RESOURCE = ICM_Resource;
+    };
+
+    TASK Task_Acquisition {
+        PRIORITY = 8;
+        AUTOSTART = FALSE;
+        ACTIVATION = 1;
+        SCHEDULE = FULL;
+        RESOURCE = ICM_Resource;
+    };
+
+    TASK Task_Processing {
+        PRIORITY = 6;
+        AUTOSTART = FALSE;
+        ACTIVATION = 1;
+        SCHEDULE = FULL;
+        RESOURCE = ICM_Resource;
+    };
+
+    TASK Task_Display {
+        PRIORITY = 4;
+        AUTOSTART = FALSE;
+        ACTIVATION = 1;
+        SCHEDULE = FULL;
+        RESOURCE = ICM_Resource;
+    };
+
+    TASK Task_Diagnostics {
+        PRIORITY = 3;
+        AUTOSTART = FALSE;
+        ACTIVATION = 1;
+        SCHEDULE = FULL;
+        RESOURCE = ICM_Resource;
+    };
+
+    TASK Task_Logging {
+        PRIORITY = 1;
+        AUTOSTART = FALSE;
+        ACTIVATION = 1;
+        SCHEDULE = FULL;
+        RESOURCE = ICM_Resource;
+    };
+
+    /* ambiente simulado: fica acima de tudo pra o "tempo do carro" não atrasar */
+    TASK Task_VehicleSim {
+        PRIORITY = 15;
+        AUTOSTART = FALSE;
+        ACTIVATION = 1;
+        SCHEDULE = FULL;
+    };
+
+    ALARM Alarm_VehicleSim {
+        COUNTER = SystemCounter;
+        ACTION = ACTIVATETASK { TASK = Task_VehicleSim; };
+        AUTOSTART = TRUE { APPMODE = std_app_mode; ALARMTIME = 1; CYCLETIME = 1; };
+    };
+    ALARM Alarm_Acquisition {
+        COUNTER = SystemCounter;
+        ACTION = ACTIVATETASK { TASK = Task_Acquisition; };
+        AUTOSTART = TRUE { APPMODE = std_app_mode; ALARMTIME = 1; CYCLETIME = 1; };
+    };
+    ALARM Alarm_Processing {
+        COUNTER = SystemCounter;
+        ACTION = ACTIVATETASK { TASK = Task_Processing; };
+        AUTOSTART = TRUE { APPMODE = std_app_mode; ALARMTIME = 2; CYCLETIME = 2; };
+    };
+    ALARM Alarm_Display {
+        COUNTER = SystemCounter;
+        ACTION = ACTIVATETASK { TASK = Task_Display; };
+        AUTOSTART = TRUE { APPMODE = std_app_mode; ALARMTIME = 5; CYCLETIME = 5; };
+    };
+    ALARM Alarm_Diagnostics {
+        COUNTER = SystemCounter;
+        ACTION = ACTIVATETASK { TASK = Task_Diagnostics; };
+        AUTOSTART = TRUE { APPMODE = std_app_mode; ALARMTIME = 10; CYCLETIME = 10; };
+    };
+    ALARM Alarm_Logging {
+        COUNTER = SystemCounter;
+        ACTION = ACTIVATETASK { TASK = Task_Logging; };
+        AUTOSTART = TRUE { APPMODE = std_app_mode; ALARMTIME = 100; CYCLETIME = 100; };
+    };
+};

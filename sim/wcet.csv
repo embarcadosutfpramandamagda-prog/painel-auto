@@ -1,0 +1,13 @@
+# Tempo de CPU estimado de cada tarefa/ISR (WCET), em microssegundos.
+# custo_us = tempo total do job; recurso_us = quanto disso é dentro do ICM_Resource;
+# prazo_ms = deadline (tarefas periódicas: o próprio período; CAN: RTR-01 < 2 ms).
+# Estimativa pra um Cortex-M4 a 80 MHz com FPU; o SIL usa isso pra simular a CPU.
+#
+# nome,              custo_us, recurso_us, prazo_ms
+ISR2_CAN,            25,       0,          1
+Task_CAN_RX,         90,       30,         2
+Task_Acquisition,    180,      40,         10
+Task_Processing,     140,      90,         20
+Task_Display,        1200,     60,         50
+Task_Diagnostics,    220,      160,        100
+Task_Logging,        450,      60,         1000

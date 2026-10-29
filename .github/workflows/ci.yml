@@ -1,0 +1,82 @@
+# CI do Projeto 2: a cada push/pull request compila, roda os testes (GoogleTest)
+# e guarda as evidências. O segundo job leva o mesmo código pro Trampoline de
+# verdade (alvo posix): OIL -> GOIL -> compila/linka -> roda.
+name: ICM CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  testes:
+    name: Build + GoogleTest + SIL
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar (CMake + GoogleTest v1.14.0)
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Compilar
+        run: cmake --build build -j
+
+      - name: Testes (ctest)
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Evidências de temporização (SIL, 30 s com falhas)
+        run: cmake --build build --target evidencias
+
+      - name: Painel no terminal (primeiros segundos)
+        run: ./build/icm_sil --seconds 10 | head -40
+
+      - name: Guardar resultados
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidencias-icm
+          path: |
+            build/test-results/
+            docs/evidencias/
+
+  trampoline-posix:
+    name: Trampoline RTOS (posix) - GOIL + build + execução
+    runs-on: ubuntu-latest
+    # o Trampoline vem de fora do projeto; se ele mudar e quebrar, não bloqueia os testes
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Baixar o Trampoline
+        run: git clone --depth 1 https://github.com/TrampolineRTOS/trampoline.git trampoline
+
+      - name: Compilar o GOIL e o ViPER
+        run: |
+          # compiladores novos geram avisos no código do GOIL; sem isso o -Werror para o build
+          sed -i '/-Werror/d' trampoline/goil/build/libpm/python-makefiles/default_build_options.py
+          cd trampoline/goil/makefile-unix && ./build.py
+          cd ../../viper && make
+
+      - name: GOIL a partir do oil/icm_posix.oil
+        run: |
+          cd oil
+          ../trampoline/goil/makefile-unix/goil --target=posix/linux --templates=../trampoline/goil/templates/ icm_posix.oil
+
+      - name: Compilar e linkar
+        run: cd oil && ./make.py
+
+      - name: Rodar 12 s no Trampoline
+        run: |
+          cd oil
+          export VIPER_PATH=$GITHUB_WORKSPACE/trampoline/viper
+          timeout -k 3 12 stdbuf -oL ./icm_posix_exe | tee trampoline_run.txt || true
+          grep -q "km/h" trampoline_run.txt
+
+      - name: Guardar saída e trace do Trampoline
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trampoline-posix
+          path: |
+            oil/trampoline_run.txt
+            oil/trace.json

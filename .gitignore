@@ -23,3 +23,9 @@ oil/make.py
 oil/icm_posix/
 oil/trace.json
 oil/readtrace.py
+
+# pastas e arquivos antigos (removidos do repositório)
+.idea/
+assets/
+dashboard/
+game-engine.js
